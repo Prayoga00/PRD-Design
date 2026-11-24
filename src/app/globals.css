@@ -126,6 +126,167 @@
   transform: scale(0.98);
 }
 
+/* Shared Glass Iris popover & dropdown menu surface */
+.iris-dropdown-menu {
+  border: 1px solid rgba(90, 76, 245, 0.36);
+  background: linear-gradient(180deg, rgba(26, 26, 32, 0.98) 0%, rgba(19, 19, 24, 0.98) 100%);
+  box-shadow:
+    0 20px 48px -12px rgba(0, 0, 0, 0.82),
+    0 0 0 1px rgba(47, 107, 255, 0.16);
+  backdrop-filter: blur(18px);
+}
+
+/* Declarative Glass Iris customizable <select> (progressive enhancement + fallback) */
+.iris-select {
+  color-scheme: dark;
+  max-width: 100%;
+  background-color: #18181e;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  color: #ffffff;
+  cursor: pointer;
+  transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
+}
+
+.iris-select:hover {
+  background-color: #1e1e26;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.iris-select:focus-visible,
+.iris-select:focus {
+  outline: none;
+  border-color: #2f6bff;
+  box-shadow: 0 0 0 3px rgba(47, 107, 255, 0.22);
+}
+
+@supports (appearance: base-select) {
+  .iris-select,
+  .iris-select::picker(select) {
+    appearance: base-select;
+  }
+
+  .iris-select {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.625rem;
+  }
+
+  .iris-select::picker-icon {
+    color: #8c8c8c;
+    flex-shrink: 0;
+    transition: color 160ms ease;
+    @media (prefers-reduced-motion: no-preference) {
+      transition: color 160ms ease, transform 180ms var(--ease-out);
+    }
+  }
+
+  .iris-select:open {
+    border-color: #2f6bff;
+    box-shadow: 0 0 0 3px rgba(47, 107, 255, 0.22);
+  }
+
+  .iris-select:open::picker-icon {
+    color: #60a5fa;
+    transform: rotate(180deg);
+  }
+
+  .iris-select::picker(select) {
+    margin-block: 6px;
+    padding: 6px;
+    min-width: anchor-size(width);
+    border-radius: 12px;
+    border: 1px solid rgba(90, 76, 245, 0.42);
+    background: linear-gradient(180deg, #1a1a21 0%, #131318 100%);
+    color: #ffffff;
+    box-shadow:
+      0 22px 50px -12px rgba(0, 0, 0, 0.85),
+      0 0 0 1px rgba(47, 107, 255, 0.18);
+    opacity: 0;
+    transition:
+      opacity 150ms var(--ease-out),
+      overlay 150ms allow-discrete,
+      display 150ms allow-discrete;
+    @media (prefers-reduced-motion: no-preference) {
+      transform: translateY(-4px);
+      transition:
+        opacity 150ms var(--ease-out),
+        transform 150ms var(--ease-out),
+        overlay 150ms allow-discrete,
+        display 150ms allow-discrete;
+    }
+  }
+
+  .iris-select::picker(select):popover-open {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  @starting-style {
+    .iris-select::picker(select):popover-open {
+      opacity: 0;
+      @media (prefers-reduced-motion: no-preference) {
+        transform: translateY(-4px);
+      }
+    }
+  }
+
+  .iris-select option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.65rem;
+    border-radius: 8px;
+    color: #d4d4d8;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 140ms ease, color 140ms ease;
+  }
+
+  .iris-select.iris-select-sm option {
+    padding: 0.4rem 0.55rem;
+    font-size: 0.75rem;
+  }
+
+  .iris-select option:hover,
+  .iris-select option:focus-visible {
+    background: rgba(47, 107, 255, 0.18);
+    color: #ffffff;
+  }
+
+  .iris-select option:checked {
+    background: linear-gradient(
+      135deg,
+      rgba(47, 107, 255, 0.3) 0%,
+      rgba(90, 76, 245, 0.26) 100%
+    );
+    color: #ffffff;
+  }
+
+  .iris-select option::checkmark {
+    order: 1;
+    margin-inline-start: auto;
+    color: #60a5fa;
+  }
+}
+
+@supports not (appearance: base-select) {
+  .iris-select {
+    appearance: none;
+    padding-inline-end: 2.25rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238C8C8C' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 14px 14px;
+  }
+
+  .iris-select option {
+    background-color: #16161b;
+    color: #ffffff;
+  }
+}
+
 /* Native <dialog> dark modal scroll containment & backdrop */
 dialog:modal {
   overscroll-behavior: contain;

@@ -48,9 +48,10 @@ function ApiSettingsForm({
         </label>
         <select
           id="ai-provider-select"
+          name="ai-provider"
           value={provider}
           onChange={(e) => setProvider(e.target.value as AiProviderChoice)}
-          className="mt-1.5 w-full rounded-xl border border-white/[0.1] bg-[#1D1D22] px-3 py-2 text-sm text-white focus:border-[#2F6BFF] focus:outline-none"
+          className="iris-select mt-1.5 w-full rounded-xl px-3.5 py-2.5 text-sm"
         >
           <option value="auto">Otomatis (deteksi dari key / .env)</option>
           <option value="gemini">Google Gemini (gemini-2.5-flash)</option>

@@ -252,9 +252,10 @@ export function PlanTextPanel({
                       </label>
                       <select
                         id={`panel-status-${task.id}`}
+                        name={`panel-status-${task.id}`}
                         value={task.status}
                         onChange={(e) => onMoveTask(task.id, e.target.value as RoadmapStatus)}
-                        className="min-w-0 flex-1 rounded-lg border border-white/[0.1] bg-[#121216] px-2 py-1 text-[11px] font-medium text-white focus:border-[#2F6BFF] focus:outline-none"
+                        className="iris-select iris-select-sm min-w-0 flex-1 rounded-lg px-2.5 py-1 text-[11px] font-medium"
                       >
                         {ROADMAP_COLUMNS.map((col) => (
                           <option key={col.id} value={col.id}>

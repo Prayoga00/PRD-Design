@@ -108,9 +108,10 @@ export function TaskComposerForm({
           </label>
           <select
             id={`${uid}-status`}
+            name="task-status"
             value={status}
             onChange={(e) => setStatus(e.target.value as RoadmapStatus)}
-            className="mt-1 w-full rounded-lg border border-white/[0.12] bg-[#0F1016] px-2.5 py-1.5 text-xs text-white focus:border-[#2F6BFF] focus:outline-none"
+            className="iris-select iris-select-sm mt-1 w-full rounded-lg px-2.5 py-1.5 text-xs"
           >
             {ROADMAP_COLUMNS.map((col) => (
               <option key={col.id} value={col.id}>
@@ -126,9 +127,10 @@ export function TaskComposerForm({
           </label>
           <select
             id={`${uid}-priority`}
+            name="task-priority"
             value={priority}
             onChange={(e) => setPriority(e.target.value as TaskPriority)}
-            className="mt-1 w-full rounded-lg border border-white/[0.12] bg-[#0F1016] px-2.5 py-1.5 text-xs text-white focus:border-[#2F6BFF] focus:outline-none"
+            className="iris-select iris-select-sm mt-1 w-full rounded-lg px-2.5 py-1.5 text-xs"
           >
             <option value="high">Tinggi</option>
             <option value="medium">Sedang</option>
@@ -142,9 +144,10 @@ export function TaskComposerForm({
           </label>
           <select
             id={`${uid}-node`}
+            name="task-linked-node"
             value={linkedNodeId}
             onChange={(e) => setLinkedNodeId(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-white/[0.12] bg-[#0F1016] px-2.5 py-1.5 text-xs text-white focus:border-[#2F6BFF] focus:outline-none"
+            className="iris-select iris-select-sm mt-1 w-full rounded-lg px-2.5 py-1.5 text-xs"
           >
             <option value="">Umum / Lintas tahap</option>
             {nodes.map((node) => (

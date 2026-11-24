@@ -573,7 +573,7 @@ export default function HomePage() {
                     </button>
 
                     {starterMenuOpen && (
-                      <div className="absolute bottom-9 left-0 z-40 w-64 rounded-xl border border-white/[0.1] bg-[#17171B] p-1.5 shadow-2xl">
+                      <div className="iris-dropdown-menu absolute bottom-9 left-0 z-40 w-64 rounded-xl p-1.5">
                         <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-[#6E6E6E]">
                           Contoh Cerita ({activePurposeMeta.label})
                         </p>
@@ -612,7 +612,7 @@ export default function HomePage() {
                     </button>
 
                     {purposeMenuOpen && (
-                      <div className="absolute bottom-9 left-0 z-40 w-52 rounded-xl border border-white/[0.1] bg-[#17171B] p-1.5 shadow-2xl">
+                      <div className="iris-dropdown-menu absolute bottom-9 left-0 z-40 w-52 rounded-xl p-1.5">
                         {PRD_PURPOSE_OPTIONS.map((opt) => (
                           <button
                             key={opt.id}
@@ -659,7 +659,7 @@ export default function HomePage() {
                     </button>
 
                     {thinkMenuOpen && (
-                      <div className="absolute bottom-9 left-0 z-40 w-48 rounded-xl border border-white/[0.1] bg-[#17171B] p-1.5 shadow-2xl">
+                      <div className="iris-dropdown-menu absolute bottom-9 left-0 z-40 w-48 rounded-xl p-1.5">
                         <button
                           type="button"
                           onClick={() => {

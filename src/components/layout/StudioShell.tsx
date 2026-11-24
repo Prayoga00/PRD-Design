@@ -444,7 +444,7 @@ export function StudioShell({
                 <div
                   role="region"
                   aria-label="Hasil pencarian cepat"
-                  className="absolute right-0 left-0 top-10 z-50 w-full min-w-[270px] rounded-xl border border-white/[0.1] bg-[#151518]/98 p-2 shadow-2xl backdrop-blur-xl sm:left-auto sm:w-[320px]"
+                  className="iris-dropdown-menu absolute right-0 left-0 top-10 z-50 w-full min-w-[270px] rounded-xl p-2 sm:left-auto sm:w-[320px]"
                 >
                   {searchResults.projectMatches.length > 0 && (
                     <div className="mb-1.5">
@@ -571,7 +571,7 @@ export function StudioShell({
               </button>
 
               {bellOpen && (
-                <div className="absolute right-0 top-10 z-50 w-72 rounded-xl border border-white/[0.1] bg-[#151518]/98 p-3 shadow-2xl backdrop-blur-xl">
+                <div className="iris-dropdown-menu absolute right-0 top-10 z-50 w-72 rounded-xl p-3">
                   <div className="flex items-center justify-between border-b border-white/[0.08] pb-2">
                     <span className="text-xs font-semibold text-white">Status Studio</span>
                     <span className="text-[10px] text-[#8C8C8C]">
@@ -620,7 +620,7 @@ export function StudioShell({
               </button>
 
               {userMenuOpen && (
-                <div className="absolute right-0 top-10 z-50 w-56 rounded-xl border border-white/[0.1] bg-[#151518]/98 p-2 shadow-2xl backdrop-blur-xl">
+                <div className="iris-dropdown-menu absolute right-0 top-10 z-50 w-56 rounded-xl p-2">
                   {auth.user ? (
                     <>
                       <div className="border-b border-white/[0.08] px-2.5 py-2">

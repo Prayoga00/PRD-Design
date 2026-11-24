@@ -242,9 +242,8 @@ export function RoadmapBoardView({
   return (
     <section
       aria-label="Roadmap Detail Kanban Board"
-      className={`flex min-h-0 flex-1 flex-col bg-[#0E0E0E] ${
-        dragState ? 'roadmap-dragging' : ''
-      }`}
+      className={`flex min-h-0 flex-1 flex-col bg-[#0E0E0E] ${dragState ? 'roadmap-dragging' : ''
+        }`}
     >
       <div role="status" aria-live="polite" className="sr-only">
         {liveAnnouncement}
@@ -300,9 +299,10 @@ export function RoadmapBoardView({
             </label>
             <select
               id="roadmap-priority-filter"
+              name="roadmap-priority-filter"
               value={priorityFilter}
               onChange={(e) => setPriorityFilter(e.target.value as 'all' | TaskPriority)}
-              className="rounded-lg border border-white/[0.1] bg-[#18181D] px-2.5 py-1.5 text-xs font-medium text-[#D4D4D8] focus:border-[#2F6BFF] focus:outline-none"
+              className="iris-select iris-select-sm rounded-lg px-3 py-1.5 text-xs font-medium"
             >
               <option value="all">Semua Prioritas</option>
               <option value="high">Prioritas Tinggi</option>
@@ -352,11 +352,10 @@ export function RoadmapBoardView({
                 key={col.id}
                 data-roadmap-column={col.id}
                 aria-label={`Kolom ${col.label}`}
-                className={`roadmap-column flex min-h-[380px] flex-col rounded-2xl border p-3.5 transition-colors ${
-                  isDropHighlight
-                    ? 'border-[#2F6BFF] bg-[#171E33] ring-2 ring-[#2F6BFF]/30'
-                    : `border-white/[0.08] ${col.columnTintClass}`
-                }`}
+                className={`roadmap-column flex min-h-[380px] flex-col rounded-2xl border p-3.5 transition-colors ${isDropHighlight
+                  ? 'border-[#2F6BFF] bg-[#171E33] ring-2 ring-[#2F6BFF]/30'
+                  : `border-white/[0.08] ${col.columnTintClass}`
+                  }`}
               >
                 {/* Column Header */}
                 <div className="flex items-start justify-between gap-2 border-b border-white/[0.08] pb-3">
@@ -395,11 +394,10 @@ export function RoadmapBoardView({
                 <div className="mt-3 flex-1 space-y-2.5">
                   {colTasks.length === 0 ? (
                     <div
-                      className={`flex min-h-[140px] flex-col items-center justify-center rounded-xl border border-dashed p-4 text-center text-xs ${
-                        isDropHighlight
-                          ? 'border-[#2F6BFF] bg-[#2F6BFF]/10 font-medium text-[#93C5FD]'
-                          : 'border-white/[0.1] bg-[#151519]/60 text-[#6E6E6E]'
-                      }`}
+                      className={`flex min-h-[140px] flex-col items-center justify-center rounded-xl border border-dashed p-4 text-center text-xs ${isDropHighlight
+                        ? 'border-[#2F6BFF] bg-[#2F6BFF]/10 font-medium text-[#93C5FD]'
+                        : 'border-white/[0.1] bg-[#151519]/60 text-[#6E6E6E]'
+                        }`}
                     >
                       {isDropHighlight
                         ? `Lepaskan di sini untuk pindah ke ${col.label}`
@@ -420,17 +418,16 @@ export function RoadmapBoardView({
                           style={
                             isDraggingThis
                               ? {
-                                  transform: `translate3d(${dragState.dx}px, ${dragState.dy}px, 0) scale(1.02)`,
-                                  zIndex: 50,
-                                  pointerEvents: 'none',
-                                }
+                                transform: `translate3d(${dragState.dx}px, ${dragState.dy}px, 0) scale(1.02)`,
+                                zIndex: 50,
+                                pointerEvents: 'none',
+                              }
                               : undefined
                           }
-                          className={`relative rounded-xl border bg-[#1A1A20] p-3 transition-shadow ${
-                            isDraggingThis
-                              ? 'border-[#2F6BFF] shadow-2xl ring-2 ring-[#2F6BFF]/35'
-                              : 'border-white/[0.08] hover:border-white/[0.18]'
-                          }`}
+                          className={`relative rounded-xl border bg-[#1A1A20] p-3 transition-shadow ${isDraggingThis
+                            ? 'border-[#2F6BFF] shadow-2xl ring-2 ring-[#2F6BFF]/35'
+                            : 'border-white/[0.08] hover:border-white/[0.18]'
+                            }`}
                         >
                           {isEditing ? (
                             <div className="space-y-2">
@@ -570,6 +567,7 @@ export function RoadmapBoardView({
                                 </label>
                                 <select
                                   id={`move-${task.id}`}
+                                  name={`move-${task.id}`}
                                   value={task.status}
                                   onChange={(e) => {
                                     const nextStatus = e.target.value as RoadmapStatus;
@@ -577,7 +575,7 @@ export function RoadmapBoardView({
                                     announceMove(task.title, nextStatus);
                                   }}
                                   aria-label={`Pindahkan status task ${task.title}`}
-                                  className="min-w-0 flex-1 rounded-lg border border-white/[0.1] bg-[#121216] px-2 py-1 text-[11px] font-medium text-white focus:border-[#2F6BFF] focus:outline-none"
+                                  className="iris-select iris-select-sm min-w-0 flex-1 rounded-lg px-2.5 py-1 text-[11px] font-medium"
                                 >
                                   {ROADMAP_COLUMNS.map((opt) => (
                                     <option key={opt.id} value={opt.id}>
