@@ -204,31 +204,26 @@
       0 0 0 1px rgba(47, 107, 255, 0.18);
     opacity: 0;
     transition:
-      opacity 150ms var(--ease-out),
-      overlay 150ms allow-discrete,
-      display 150ms allow-discrete;
+      opacity var(--ease-out),
+      overlay,
+      display;
+    transition-duration: 150ms;
+    transition-behavior: allow-discrete;
     @media (prefers-reduced-motion: no-preference) {
       transform: translateY(-4px);
       transition:
-        opacity 150ms var(--ease-out),
-        transform 150ms var(--ease-out),
-        overlay 150ms allow-discrete,
-        display 150ms allow-discrete;
+        opacity var(--ease-out),
+        transform var(--ease-out),
+        overlay,
+        display;
+      transition-duration: 150ms;
+      transition-behavior: allow-discrete;
     }
   }
 
-  .iris-select::picker(select):popover-open {
+  .iris-select:open::picker(select) {
     opacity: 1;
     transform: translateY(0);
-  }
-
-  @starting-style {
-    .iris-select::picker(select):popover-open {
-      opacity: 0;
-      @media (prefers-reduced-motion: no-preference) {
-        transform: translateY(-4px);
-      }
-    }
   }
 
   .iris-select option {
@@ -256,6 +251,7 @@
   }
 
   .iris-select option:checked {
+    font-weight: 600;
     background: linear-gradient(
       135deg,
       rgba(47, 107, 255, 0.3) 0%,
@@ -268,6 +264,15 @@
     order: 1;
     margin-inline-start: auto;
     color: #60a5fa;
+  }
+}
+
+@starting-style {
+  .iris-select:open::picker(select) {
+    opacity: 0;
+    @media (prefers-reduced-motion: no-preference) {
+      transform: translateY(-4px);
+    }
   }
 }
 
