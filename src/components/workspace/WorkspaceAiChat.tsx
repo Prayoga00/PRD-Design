@@ -47,7 +47,7 @@ export function WorkspaceAiChat({
   return (
     <aside
       aria-label="Chat AI Co-Pilot"
-      className="flex h-full flex-col border-l border-white/[0.08] bg-[#121215]"
+      className="flex h-full min-h-0 flex-col border-l border-white/[0.08] bg-[#121215]"
     >
       {/* Header */}
       <div className="border-b border-white/[0.08] px-4 py-3">

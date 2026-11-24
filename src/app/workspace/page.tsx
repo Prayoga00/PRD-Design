@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Suspense, useCallback, useState, useSyncExternalStore } from 'react';
+import React, { Suspense, useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -81,6 +81,10 @@ function WorkspaceContent() {
   const [mobileTab, setMobileTab] = useState<MobileTab>('canvas');
   const [editingTitle, setEditingTitle] = useState(false);
   const [draftTitle, setDraftTitle] = useState('');
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'auto' });
+  }, []);
 
   const handleLoadSampleWorkspace = () => {
     const discovery = createInitialDiscoveryState('ui-ux-process');
@@ -431,6 +435,7 @@ function WorkspaceContent() {
         ]}
         onSelectTab={(id) => setWorkspaceMode(id as 'studio' | 'roadmap')}
         showTopGlow={false}
+        lockViewport={true}
         statusLabel={
           workspace.aiMode === 'live-llm' || Boolean(aiSettings.apiKey.trim())
             ? 'Live LLM'
@@ -516,7 +521,7 @@ function WorkspaceContent() {
           </div>
         }
       >
-        <div className="flex min-h-0 flex-1 flex-col border-t border-white/[0.08]">
+        <div className="flex min-h-0 flex-1 flex-col border-t border-white/[0.08] lg:overflow-hidden">
           {workspaceMode === 'roadmap' ? (
             <RoadmapBoardView
               tasks={roadmapTasks}
@@ -563,8 +568,8 @@ function WorkspaceContent() {
               </div>
 
               {/* 3-Column Studio Grid */}
-              <main className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[minmax(300px,30%)_1fr_minmax(290px,27%)] lg:h-[calc(100dvh-106px)]">
-                <div className={`min-h-0 ${mobileTab === 'plan' ? 'block' : 'hidden'} lg:block`}>
+              <main className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[minmax(300px,30%)_1fr_minmax(290px,27%)] lg:grid-rows-[minmax(0,1fr)] lg:overflow-hidden">
+                <div className={`min-h-0 lg:h-full lg:overflow-hidden ${mobileTab === 'plan' ? 'block' : 'hidden'} lg:block`}>
                   <PlanTextPanel
                     planSections={workspace.planSections}
                     nodes={workspace.nodes}
@@ -601,7 +606,7 @@ function WorkspaceContent() {
                   />
                 </div>
 
-                <div className={`min-h-[420px] lg:min-h-0 ${mobileTab === 'canvas' ? 'block' : 'hidden'} lg:block`}>
+                <div className={`min-h-[420px] lg:h-full lg:min-h-0 lg:overflow-hidden ${mobileTab === 'canvas' ? 'block' : 'hidden'} lg:block`}>
                   <InteractiveCanvas
                     nodes={workspace.nodes}
                     edges={workspace.edges}
@@ -633,7 +638,7 @@ function WorkspaceContent() {
                   />
                 </div>
 
-                <div className={`min-h-0 ${mobileTab === 'chat' ? 'block' : 'hidden'} lg:block`}>
+                <div className={`min-h-0 lg:h-full lg:overflow-hidden ${mobileTab === 'chat' ? 'block' : 'hidden'} lg:block`}>
                   <WorkspaceAiChat
                     messages={workspace.chatMessages}
                     isSending={isChatSending}

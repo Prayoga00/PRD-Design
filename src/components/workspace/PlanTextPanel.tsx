@@ -98,7 +98,7 @@ export function PlanTextPanel({
   return (
     <aside
       aria-label="Plan Text Perencanaan"
-      className="flex h-full flex-col border-r border-white/[0.08] bg-[#121215]"
+      className="flex h-full min-h-0 flex-col border-r border-white/[0.08] bg-[#121215]"
     >
       {/* Header */}
       <div className="border-b border-white/[0.08] px-4 py-3">

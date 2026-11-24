@@ -58,6 +58,7 @@ interface StudioShellProps {
   statusCount?: number | string;
   onStatusClick?: () => void;
   showTopGlow?: boolean;
+  lockViewport?: boolean;
   railRef?: React.RefObject<HTMLElement | null>;
   topBarRef?: React.RefObject<HTMLElement | null>;
   onOpenHistoryModal?: () => void;
@@ -85,6 +86,7 @@ export function StudioShell({
   statusCount,
   onStatusClick,
   showTopGlow = true,
+  lockViewport = false,
   railRef,
   topBarRef,
   onOpenHistoryModal,
@@ -239,7 +241,11 @@ export function StudioShell({
   ];
 
   return (
-    <div className="relative flex min-h-dvh w-full bg-[#0E0E0E] text-white">
+    <div
+      className={`relative flex min-h-dvh w-full bg-[#0E0E0E] text-white ${
+        lockViewport ? 'lg:h-dvh lg:overflow-hidden' : ''
+      }`}
+    >
       {/* Left Rail (48u on desktop) */}
       <aside
         ref={railRef}
@@ -337,7 +343,11 @@ export function StudioShell({
       </aside>
 
       {/* Main Column Stretching Full Spare Space */}
-      <div className="relative flex min-w-0 flex-1 flex-col overflow-x-clip pb-16 lg:pb-0">
+      <div
+        className={`relative flex min-w-0 flex-1 flex-col pb-16 lg:pb-0 ${
+          lockViewport ? 'lg:min-h-0 lg:overflow-hidden' : 'overflow-x-clip'
+        }`}
+      >
         {showTopGlow && (
           <div
             aria-hidden="true"
@@ -718,7 +728,13 @@ export function StudioShell({
         </div>
 
         {/* Main Content Slot */}
-        <div className="relative z-10 flex min-h-0 flex-1 flex-col">{children}</div>
+        <div
+          className={`relative z-10 flex min-h-0 flex-1 flex-col ${
+            lockViewport ? 'lg:overflow-hidden' : ''
+          }`}
+        >
+          {children}
+        </div>
       </div>
 
       {/* Mobile Bottom Dock (< lg) */}
