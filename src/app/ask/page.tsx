@@ -162,18 +162,18 @@ function AskPrdContent() {
     updateStudioStore((prev) => {
       const q = prev.discovery.questions[questionId];
       const alreadySelected = q.selectedTagIds.includes(tagId);
+      const isUnlimited =
+        q.selectionMode === 'unlimited' || q.maxSelect === null || q.maxSelect === undefined;
 
       let nextSelected: string[];
-      if (q.selectionMode === 'single') {
+      if (!isUnlimited && q.selectionMode === 'single') {
         nextSelected = alreadySelected ? [] : [tagId];
+      } else if (alreadySelected) {
+        nextSelected = q.selectedTagIds.filter((id) => id !== tagId);
+      } else if (!isUnlimited && q.maxSelect !== null && q.selectedTagIds.length >= q.maxSelect) {
+        nextSelected = q.selectedTagIds;
       } else {
-        if (alreadySelected) {
-          nextSelected = q.selectedTagIds.filter((id) => id !== tagId);
-        } else if (q.selectedTagIds.length >= q.maxSelect) {
-          nextSelected = q.selectedTagIds;
-        } else {
-          nextSelected = [...q.selectedTagIds, tagId];
-        }
+        nextSelected = [...q.selectedTagIds, tagId];
       }
 
       return {
@@ -192,15 +192,47 @@ function AskPrdContent() {
     });
   };
 
+  const handleSelectAllTags = (questionId: AdaptiveQuestionId) => {
+    updateStudioStore((prev) => {
+      const q = prev.discovery.questions[questionId];
+      return {
+        ...prev,
+        discovery: {
+          ...prev.discovery,
+          questions: {
+            ...prev.discovery.questions,
+            [questionId]: {
+              ...q,
+              selectedTagIds: q.tags.map((t) => t.id),
+            },
+          },
+        },
+      };
+    });
+  };
+
+  const handleClearAllTags = (questionId: AdaptiveQuestionId) => {
+    updateStudioStore((prev) => {
+      const q = prev.discovery.questions[questionId];
+      return {
+        ...prev,
+        discovery: {
+          ...prev.discovery,
+          questions: {
+            ...prev.discovery.questions,
+            [questionId]: {
+              ...q,
+              selectedTagIds: [],
+            },
+          },
+        },
+      };
+    });
+  };
+
   const handleAddCustomTag = (questionId: AdaptiveQuestionId, label: string): boolean => {
     const cleaned = label.trim();
     if (!cleaned) return false;
-
-    const currentQ = discovery.questions[questionId];
-    const canSelectNew =
-      currentQ.selectionMode === 'single' ||
-      currentQ.selectedTagIds.length < currentQ.maxSelect;
-    if (!canSelectNew) return false;
 
     const newId = `custom-${questionId}-${Date.now().toString(36)}`;
     const newTag = {
@@ -213,12 +245,7 @@ function AskPrdContent() {
     updateStudioStore((prev) => {
       const q = prev.discovery.questions[questionId];
       const nextTags = [...q.tags, newTag];
-      const nextSelected =
-        q.selectionMode === 'single'
-          ? [newId]
-          : q.selectedTagIds.length < q.maxSelect
-          ? [...q.selectedTagIds, newId]
-          : q.selectedTagIds;
+      const nextSelected = [...q.selectedTagIds, newId];
 
       return {
         ...prev,
@@ -307,6 +334,8 @@ function AskPrdContent() {
         onChangePurpose={handleChangePrdPurpose}
         onSubmitQ1Story={handleSubmitQ1Story}
         onToggleTag={handleToggleTag}
+        onSelectAllTags={handleSelectAllTags}
+        onClearAllTags={handleClearAllTags}
         onAddCustomTag={handleAddCustomTag}
         onRemoveCustomTag={handleRemoveCustomTag}
         onGenerateWorkspace={handleGenerateWorkspace}

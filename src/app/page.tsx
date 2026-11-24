@@ -549,7 +549,7 @@ export default function HomePage() {
                     },
                   })
                 }
-                placeholder="Ask Anything... Ceritakan 1 pengguna & tujuan produkmu"
+                placeholder="Ceritakan siapa penggunamu, masalahnya, & tujuan produk..."
                 className="w-full resize-none bg-transparent text-sm text-white placeholder:text-[#6E6E6E] focus:outline-none"
               />
 

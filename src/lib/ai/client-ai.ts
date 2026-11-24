@@ -143,17 +143,29 @@ export async function hydrateQuestionsClient(input: {
   const purposeMeta = PRD_PURPOSE_MAP[input.prdPurpose];
   const byokRaw = await callBrowserByokLlm(
     input.aiSettings,
-    `Kamu adalah PRDin AI Discovery Architect berbahasa Indonesia. Mode Tujuan PRD: ${purposeMeta.label}. Keluarkan HANYA valid JSON dengan assistantReply, q1Summary, dan questions (q2, q3, q4, q5).`,
-    `Cerita Q1: "${input.story}"`
+    `Kamu adalah PRDin AI Discovery Architect berbahasa Indonesia.
+Mode Tujuan PRD: **${purposeMeta.label}** (${purposeMeta.shortDesc}).
+Tugasmu menganalisa cerita Pertanyaan 1 secara mendalam lalu menghasilkan JSON:
+1. assistantReply: konfirmasi ringkas & jelas mengenai persona, masalah utama, dan tujuan yang terdeteksi.
+2. q1Summary: { prdPurpose: "${input.prdPurpose}", archetype, productNameSuggestion, persona, coreGoal, painPoint, valueContext } — ekstrak langsung dari cerita Q1, bukan kalimat generik.
+3. questions: { q2, q3, q4, q5 } — setiap pertanyaan wajib memakai selectionMode: "unlimited", minSelect: 1, maxSelect: null agar pengguna bebas memilih sebanyak apa pun tag (6–8 tag relevan per pertanyaan, selectedTagIds: []).
+Keluarkan HANYA valid JSON object.`,
+    `Mode Tujuan: ${purposeMeta.label}\nRiwayat Q1: ${JSON.stringify(input.chatHistory)}\nCerita Q1 terbaru: "${input.story}"`
   );
   if (byokRaw) {
     const validated = HydrateQuestionsLlmOutputSchema.safeParse(byokRaw);
     if (validated.success) {
+      const normalizedQuestions = {
+        q2: { ...validated.data.questions.q2, selectionMode: 'unlimited' as const, maxSelect: null },
+        q3: { ...validated.data.questions.q3, selectionMode: 'unlimited' as const, maxSelect: null },
+        q4: { ...validated.data.questions.q4, selectionMode: 'unlimited' as const, maxSelect: null },
+        q5: { ...validated.data.questions.q5, selectionMode: 'unlimited' as const, maxSelect: null },
+      };
       return {
         aiMode: 'live-llm',
         assistantReply: validated.data.assistantReply,
         q1Summary: { ...validated.data.q1Summary, prdPurpose: input.prdPurpose },
-        questions: validated.data.questions,
+        questions: normalizedQuestions,
       };
     }
   }

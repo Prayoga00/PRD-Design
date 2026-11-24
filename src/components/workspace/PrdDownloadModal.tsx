@@ -82,11 +82,10 @@ export function PrdDownloadModal({ open, workspace, onClose }: PrdDownloadModalP
           <button
             type="button"
             onClick={() => setTab('markdown')}
-            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
-              tab === 'markdown'
-                ? 'bg-white text-[#0E0E0E]'
-                : 'text-[#8C8C8C] hover:text-white'
-            }`}
+            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${tab === 'markdown'
+              ? 'bg-white text-[#0E0E0E]'
+              : 'text-[#8C8C8C] hover:text-white'
+              }`}
           >
             <FileText className={`h-3.5 w-3.5 ${tab === 'markdown' ? 'text-[#2F6BFF]' : ''}`} />
             Full PRD (.md)
@@ -94,11 +93,10 @@ export function PrdDownloadModal({ open, workspace, onClose }: PrdDownloadModalP
           <button
             type="button"
             onClick={() => setTab('mermaid')}
-            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
-              tab === 'mermaid'
-                ? 'bg-white text-[#0E0E0E]'
-                : 'text-[#8C8C8C] hover:text-white'
-            }`}
+            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${tab === 'mermaid'
+              ? 'bg-white text-[#0E0E0E]'
+              : 'text-[#8C8C8C] hover:text-white'
+              }`}
           >
             <FileCode2 className={`h-3.5 w-3.5 ${tab === 'mermaid' ? 'text-[#5A4CF5]' : ''}`} />
             Diagram Mermaid Saja

@@ -112,10 +112,10 @@ export function QuestionOneChat({
         </div>
 
         <h2 id="q1-heading" className="mt-3 text-base font-semibold leading-snug text-white">
-          Ceritakan satu orang yang butuh desain/aplikasi/website ini. Sekarang tujuannya untuk apa?
+          Siapa target penggunamu, masalah apa yang mereka hadapi, dan apa tujuan akhirnya?
         </h2>
         <p className="mt-1 text-xs leading-relaxed text-[#8C8C8C]">
-          Pertanyaan 2–5 dan isi workspace akan menyesuaikan mode <strong className="text-white">{purposeMeta.label}</strong> &amp; ceritamu.
+          Tag di Pertanyaan 2–5 akan otomatis mengikuti mode <strong className="text-white">{purposeMeta.label}</strong> &amp; konteks ceritamu.
         </p>
       </div>
 
@@ -123,15 +123,18 @@ export function QuestionOneChat({
       {summary && (
         <div className="border-b border-white/[0.08] bg-[#121319] px-5 py-3">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-xs font-semibold text-[#7DD3FC]">
+            <span className="truncate text-xs font-semibold text-[#7DD3FC]">
               Terdeteksi: {summary.productNameSuggestion}
             </span>
-            <span className="rounded-md border border-white/[0.1] bg-[#1C1C22] px-2 py-0.5 text-[10px] font-semibold text-[#D4D4D8]">
+            <span className="shrink-0 rounded-md border border-white/[0.1] bg-[#1C1C22] px-2 py-0.5 text-[10px] font-semibold text-[#D4D4D8]">
               {purposeMeta.label}
             </span>
           </div>
-          <p className="mt-0.5 line-clamp-2 text-xs text-[#8C8C8C]">
-            <span className="font-medium text-white">Persona:</span> {summary.persona}
+          <p className="mt-1 line-clamp-1 text-xs text-[#D4D4D8]">
+            <span className="font-medium text-[#8C8C8C]">Persona:</span> {summary.persona}
+          </p>
+          <p className="mt-0.5 line-clamp-1 text-[11px] text-[#8C8C8C]">
+            <span className="font-medium text-[#93C5FD]">Kendala:</span> {summary.painPoint}
           </p>
         </div>
       )}

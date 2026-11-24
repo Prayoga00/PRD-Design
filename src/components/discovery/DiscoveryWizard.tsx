@@ -23,6 +23,8 @@ interface DiscoveryWizardProps {
   onChangePurpose: (nextPurpose: PrdPurpose) => Promise<void>;
   onSubmitQ1Story: (story: string) => Promise<void>;
   onToggleTag: (questionId: AdaptiveQuestionId, tagId: string) => void;
+  onSelectAllTags: (questionId: AdaptiveQuestionId) => void;
+  onClearAllTags: (questionId: AdaptiveQuestionId) => void;
   onAddCustomTag: (questionId: AdaptiveQuestionId, label: string) => boolean;
   onRemoveCustomTag: (questionId: AdaptiveQuestionId, tagId: string) => void;
   onGenerateWorkspace: () => Promise<void>;
@@ -40,6 +42,8 @@ export function DiscoveryWizard({
   onChangePurpose,
   onSubmitQ1Story,
   onToggleTag,
+  onSelectAllTags,
+  onClearAllTags,
   onAddCustomTag,
   onRemoveCustomTag,
   onGenerateWorkspace,
@@ -123,7 +127,7 @@ export function DiscoveryWizard({
         <div className="space-y-4 pb-20">
           {!q1Done && (
             <div className="rounded-xl border border-[#2F6BFF]/35 bg-[#2F6BFF]/10 px-4 py-3 text-xs leading-relaxed text-[#BFDBFE]">
-              <strong className="text-white">Mulai dari Pertanyaan 1 di sebelah kiri:</strong> begitu kamu kirim cerita singkat tentang pengguna dan tujuan produkmu, pilihan tag di Pertanyaan 2–5 di bawah ini akan otomatis berubah menyesuaikan konteks ceritamu.
+              <strong className="text-white">Mulai dari Pertanyaan 1 di sebelah kiri:</strong> ceritakan siapa penggunamu, masalahnya, dan tujuan produk. Setelah dikirim, pilihan tag di Pertanyaan 2–5 langsung menyesuaikan ceritamu dan bebas kamu pilih tanpa batas.
             </div>
           )}
 
@@ -133,6 +137,8 @@ export function DiscoveryWizard({
               question={discovery.questions[id]}
               isHydratedFromQ1={q1Done}
               onToggleTag={onToggleTag}
+              onSelectAllTags={onSelectAllTags}
+              onClearAllTags={onClearAllTags}
               onAddCustomTag={onAddCustomTag}
               onRemoveCustomTag={onRemoveCustomTag}
             />
@@ -146,7 +152,7 @@ export function DiscoveryWizard({
                   {[
                     { label: 'Q1 Cerita', done: q1Done },
                     { label: 'Q2 Awal', done: qCompletion[0] },
-                    { label: 'Q3 3 Fitur', done: qCompletion[1] },
+                    { label: 'Q3 Fitur', done: qCompletion[1] },
                     { label: 'Q4 Value', done: qCompletion[2] },
                     { label: 'Q5 Retensi', done: qCompletion[3] },
                   ].map((item) => (
@@ -165,8 +171,8 @@ export function DiscoveryWizard({
                 </div>
                 <p className="mt-2 text-xs text-[#8C8C8C]">
                   {allCompleted
-                    ? 'Semua 5 pertanyaan siap! Masuk ke workspace untuk melihat Plan Text, Canvas Zoomable, dan Chat AI.'
-                    : 'Lengkapi Q1 dan pilih tag di Q2–Q5 untuk mengaktifkan workspace PRDin.'}
+                    ? 'Semua 5 pertanyaan siap! Klik tombol di samping untuk menyusun Plan Text, Canvas interaktif, dan Roadmap proyekmu.'
+                    : 'Kirim cerita di Q1 lalu pilih minimal 1 tag di setiap pertanyaan Q2–Q5 (bebas memilih sebanyak apa pun).'}
                 </p>
               </div>
 
@@ -183,7 +189,7 @@ export function DiscoveryWizard({
                   </>
                 ) : (
                   <>
-                    Masuk ke Workspace PRDin
+                    Susun Workspace PRDin
                     <ArrowRight className="h-4 w-4" />
                   </>
                 )}

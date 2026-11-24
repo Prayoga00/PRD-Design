@@ -93,9 +93,19 @@ function readInitialClientSnapshot(): StudioStoreSnapshot {
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<StudioStoreSnapshot>;
       if (parsed.discovery) {
+        const rawQuestions = parsed.discovery.questions;
+        const upgradedQuestions = rawQuestions
+          ? {
+              q2: { ...rawQuestions.q2, selectionMode: 'unlimited' as const, maxSelect: null },
+              q3: { ...rawQuestions.q3, selectionMode: 'unlimited' as const, maxSelect: null },
+              q4: { ...rawQuestions.q4, selectionMode: 'unlimited' as const, maxSelect: null },
+              q5: { ...rawQuestions.q5, selectionMode: 'unlimited' as const, maxSelect: null },
+            }
+          : createInitialDiscoveryState(parsed.discovery.prdPurpose ?? 'website').questions;
         discovery = {
           ...parsed.discovery,
           prdPurpose: parsed.discovery.prdPurpose ?? 'website',
+          questions: upgradedQuestions,
         };
       }
       if (parsed.workspace) {

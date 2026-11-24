@@ -33,9 +33,9 @@ export interface AdaptiveQuestionConfig {
   title: string;
   prompt: string;
   helperHint: string;
-  selectionMode: 'single' | 'multi';
+  selectionMode: 'single' | 'multi' | 'unlimited';
   minSelect: number;
-  maxSelect: number;
+  maxSelect: number | null;
   tags: QuestionTag[];
   selectedTagIds: string[];
   updatedAt?: number;

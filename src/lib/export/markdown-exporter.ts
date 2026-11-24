@@ -134,8 +134,8 @@ export function compilePrdMarkdown(workspace: WorkspaceState): string {
     '',
     `- **Target Persona (Q1):** ${q1?.persona ?? 'Target pengguna utama'}`,
     `- **Kebutuhan & Masalah Utama:** ${q1?.painPoint ?? '-'}`,
-    `- **Aksi Awal Wajib (Q2):** ${q2Labels.join(', ') || '-'}`,
-    `- **3 Fitur Paling Wajib (Q3):** ${q3Labels.join(', ') || '-'}`,
+    `- **Aksi Awal (Q2):** ${q2Labels.join(', ') || '-'}`,
+    `- **Fitur & Kebutuhan Prioritas (Q3):** ${q3Labels.join(', ') || '-'}`,
     `- **Alasan Pengguna Mau Memakai (Q4 - Adoption Hook):** ${q4Labels.join(', ') || '-'}`,
     `- **Alasan Pengguna Kembali Lagi (Q5 - Retention Loop):** ${q5Labels.join(', ') || '-'}`
   );

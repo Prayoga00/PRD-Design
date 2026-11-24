@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Check, Plus, Sparkles, X } from 'lucide-react';
+import { Check, CheckCheck, Plus, Sparkles, X } from 'lucide-react';
 import type { AdaptiveQuestionConfig } from '@/lib/types/prdin';
 import { handleImeSafeEnterSubmit } from '@/lib/utils/keyboard';
 
@@ -9,6 +9,8 @@ interface AdaptiveTagStepProps {
   question: AdaptiveQuestionConfig;
   isHydratedFromQ1: boolean;
   onToggleTag: (questionId: AdaptiveQuestionConfig['id'], tagId: string) => void;
+  onSelectAllTags?: (questionId: AdaptiveQuestionConfig['id']) => void;
+  onClearAllTags?: (questionId: AdaptiveQuestionConfig['id']) => void;
   onAddCustomTag: (questionId: AdaptiveQuestionConfig['id'], label: string) => boolean;
   onRemoveCustomTag: (questionId: AdaptiveQuestionConfig['id'], tagId: string) => void;
 }
@@ -17,12 +19,13 @@ export function AdaptiveTagStep({
   question,
   isHydratedFromQ1,
   onToggleTag,
+  onSelectAllTags,
+  onClearAllTags,
   onAddCustomTag,
   onRemoveCustomTag,
 }: AdaptiveTagStepProps) {
   const [isOtherOpen, setIsOtherOpen] = useState(false);
   const [customInput, setCustomInput] = useState('');
-  const [limitNotice, setLimitNotice] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
@@ -33,34 +36,15 @@ export function AdaptiveTagStep({
 
   const selectedSet = new Set(question.selectedTagIds);
   const selectedCount = question.selectedTagIds.length;
-  const isAtMax = selectedCount >= question.maxSelect;
-
-  const handleTagClick = (tagId: string) => {
-    const isSelected = selectedSet.has(tagId);
-    if (!isSelected && question.selectionMode === 'multi' && isAtMax) {
-      setLimitNotice(
-        `Maksimal ${question.maxSelect} pilihan untuk pertanyaan ini. Klik salah satu tag terpilih untuk menggantinya.`
-      );
-      return;
-    }
-    setLimitNotice(null);
-    onToggleTag(question.id, tagId);
-  };
+  const allSelected = question.tags.length > 0 && selectedCount >= question.tags.length;
 
   const handleSubmitOther = () => {
     const trimmed = customInput.trim();
     if (!trimmed) return;
-    if (question.selectionMode === 'multi' && isAtMax) {
-      setLimitNotice(
-        `Sudah terpilih ${question.maxSelect}/${question.maxSelect}. Lepas 1 pilihan dulu sebelum menambah tag baru.`
-      );
-      return;
-    }
     const added = onAddCustomTag(question.id, trimmed);
     if (added) {
       setCustomInput('');
       setIsOtherOpen(false);
-      setLimitNotice(null);
     }
   };
 
@@ -69,7 +53,7 @@ export function AdaptiveTagStep({
   return (
     <article className="rounded-2xl border border-white/[0.08] bg-[#151518] p-5 transition-colors">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-[#2F6BFF] to-[#5A4CF5] text-xs font-bold text-white">
             {question.stepNumber}
           </span>
@@ -82,21 +66,35 @@ export function AdaptiveTagStep({
           )}
         </div>
 
-        <span
-          className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-            selectedCount >= question.minSelect
-              ? 'border border-[#2F6BFF]/40 bg-[#2F6BFF]/20 text-[#93C5FD]'
-              : 'border border-white/[0.08] bg-[#1D1D22] text-[#8C8C8C]'
-          }`}
-        >
-          {selectedCount}/{question.maxSelect} dipilih
-        </span>
+        <div className="flex items-center gap-1.5">
+          {onSelectAllTags && onClearAllTags && (
+            <button
+              type="button"
+              onClick={() =>
+                allSelected ? onClearAllTags(question.id) : onSelectAllTags(question.id)
+              }
+              className="inline-flex items-center gap-1 rounded-full border border-white/[0.08] bg-[#1B1B20] px-2.5 py-0.5 text-[11px] font-medium text-[#8C8C8C] transition-colors hover:border-[#2F6BFF]/45 hover:text-white"
+            >
+              <CheckCheck className="h-3 w-3 text-[#60A5FA]" />
+              {allSelected ? 'Kosongkan' : 'Pilih Semua'}
+            </button>
+          )}
+          <span
+            className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+              selectedCount >= question.minSelect
+                ? 'border border-[#2F6BFF]/40 bg-[#2F6BFF]/20 text-[#93C5FD]'
+                : 'border border-white/[0.08] bg-[#1D1D22] text-[#8C8C8C]'
+            }`}
+          >
+            {selectedCount > 0 ? `${selectedCount} dipilih · Bebas pilih` : 'Min. 1 · Bebas pilih'}
+          </span>
+        </div>
       </div>
 
       <p className="mt-2 text-sm font-medium leading-snug text-[#E4E4E7]">{question.prompt}</p>
       <p className="mt-1 text-xs text-[#6E6E6E]">{question.helperHint}</p>
 
-      {/* Selectable tags + explicit Other choice */}
+      {/* Freely selectable tags + custom option */}
       <div className="mt-3.5 flex flex-wrap gap-2">
         {question.tags.map((tag) => {
           const active = selectedSet.has(tag.id);
@@ -111,7 +109,7 @@ export function AdaptiveTagStep({
             >
               <button
                 type="button"
-                onClick={() => handleTagClick(tag.id)}
+                onClick={() => onToggleTag(question.id, tag.id)}
                 title={tag.description}
                 aria-pressed={active}
                 className={`inline-flex items-center gap-1.5 py-1.5 text-left text-xs font-medium ${
@@ -135,13 +133,10 @@ export function AdaptiveTagStep({
           );
         })}
 
-        {/* Explicit Other option */}
+        {/* Custom tag trigger */}
         <button
           type="button"
-          onClick={() => {
-            setIsOtherOpen((prev) => !prev);
-            setLimitNotice(null);
-          }}
+          onClick={() => setIsOtherOpen((prev) => !prev)}
           aria-expanded={isOtherOpen}
           className={`inline-flex items-center gap-1.5 rounded-xl border border-dashed px-3 py-1.5 text-xs font-semibold transition-colors ${
             isOtherOpen
@@ -150,7 +145,7 @@ export function AdaptiveTagStep({
           }`}
         >
           <Plus className="h-3.5 w-3.5" />
-          Other
+          Tambah Pilihan
         </button>
       </div>
 
@@ -167,7 +162,7 @@ export function AdaptiveTagStep({
         </div>
       )}
 
-      {/* Manual input revealed after clicking Other */}
+      {/* Manual input revealed after clicking Tambah Pilihan */}
       {isOtherOpen && (
         <form
           onSubmit={(e) => {
@@ -192,7 +187,7 @@ export function AdaptiveTagStep({
                 onSubmit: handleSubmitOther,
               })
             }
-            placeholder="Tulis pilihan tag kamu sendiri..."
+            placeholder="Tulis fitur atau kebutuhan spesifikmu..."
             className="min-w-[200px] flex-1 rounded-lg border border-white/[0.12] bg-[#141418] px-3 py-1.5 text-xs text-white placeholder:text-[#6E6E6E] focus:border-[#2F6BFF] focus:outline-none"
           />
           <button
@@ -200,7 +195,7 @@ export function AdaptiveTagStep({
             disabled={!customInput.trim()}
             className="iris-btn-gradient rounded-lg px-3 py-1.5 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-45"
           >
-            Tambah Tag
+            Simpan Pilihan
           </button>
           <button
             type="button"
@@ -213,12 +208,6 @@ export function AdaptiveTagStep({
             Batal
           </button>
         </form>
-      )}
-
-      {limitNotice && (
-        <p role="status" className="mt-2.5 rounded-lg border border-[#5A4CF5]/35 bg-[#5A4CF5]/15 px-3 py-1.5 text-xs text-[#C4B5FD]">
-          {limitNotice}
-        </p>
       )}
     </article>
   );

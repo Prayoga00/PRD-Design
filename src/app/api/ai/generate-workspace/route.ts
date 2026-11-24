@@ -72,11 +72,14 @@ export async function POST(req: NextRequest) {
 
     const systemPrompt = `Kamu adalah PRDin Product & UX Systems Architect berbahasa Indonesia.
 Tujuan pembuatan PRD saat ini adalah: **${purposeMeta.label}** (${purposeMeta.shortDesc}).
-Ubah jawaban 5 pertanyaan menjadi struktur Workspace PRDin yang sinkron sesuai mode **${purposeMeta.label}**:
+Ubah seluruh jawaban 5 pertanyaan menjadi struktur Workspace PRDin yang sinkron sesuai mode **${purposeMeta.label}**:
 1. blueprintNodes dengan zone "ux-research" (4 node: kind "ux-persona", "ux-pain", "ux-value", "ux-retention").
-2. blueprintNodes dengan zone "business-flow" (untuk mode "UI / UX Proses": alur tahapan desain & artefak UX/UI dari riset awal -> 3 artefak wajib -> usability testing -> handoff; untuk mode "Aplikasi": onboarding app -> 3 modul aplikasi -> state/validasi -> retention loop; untuk mode "Website": landing entry -> 3 halaman/fitur web -> konversi -> kunjungan ulang).
+2. blueprintNodes dengan zone "business-flow" — cakup SEMUA tag fitur/artefak yang dipilih user di Q2–Q5 tanpa memangkas pilihan user:
+   - Mode "UI / UX Proses": alur tahapan desain & artefak UX/UI dari riset awal -> seluruh artefak pilihan -> usability testing -> handoff;
+   - Mode "Aplikasi": onboarding app -> seluruh modul aplikasi pilihan -> state/validasi -> retention loop;
+   - Mode "Website": landing entry -> seluruh halaman/fitur web pilihan -> konversi -> kunjungan ulang.
 3. edges berarah antar node (setiap source dan target wajib ada di blueprintNodes.id).
-4. planSections yang terhubung 1-to-1 (linkedNodeId dan linkedSectionId cocok) dengan penjelasan lengkap, user story, komponen/artefak UI, acceptance criteria terukur, dan edge cases.
+4. planSections yang terhubung 1-to-1 (linkedNodeId dan linkedSectionId cocok) dengan penjelasan lengkap, user story, komponen/artefak UI spesifik (UI/UX-ready), acceptance criteria terukur, dan edge cases.
 
 Keluarkan HANYA JSON sesuai schema.`;
 

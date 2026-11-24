@@ -328,42 +328,323 @@ const UI_UX_PROCESS_BLUEPRINT: Omit<ArchetypeBlueprint, 'label' | 'defaultProduc
   ],
 };
 
+const ARCHETYPE_SIGNALS: Array<{ archetype: ProductArchetype; patterns: RegExp[]; weight: number }> = [
+  {
+    archetype: 'ecommerce',
+    weight: 3,
+    patterns: [
+      /(jual|beli|toko|produk|kue|baju|merch|checkout|keranjang|cart|pre-order|preorder|\bpo\b|umkm|dagang|warung|olshop|marketplace|katalog|ongkir|belanja)/g,
+    ],
+  },
+  {
+    archetype: 'booking',
+    weight: 3,
+    patterns: [
+      /(booking|reservasi|jadwal|antrean|antrian|klinik|dokter|salon|barber|fotografer|studio|bengkel|jasa|janji temu|konsultasi|appointment|slot|hotel|tiket)/g,
+    ],
+  },
+  {
+    archetype: 'education',
+    weight: 3,
+    patterns: [
+      /(belajar|kursus|kelas|edukasi|siswa|murid|mahasiswa|materi|kuis|bimbel|mentoring|komunitas belajar|sekolah|pelatihan|kurikulum|ujian)/g,
+    ],
+  },
+  {
+    archetype: 'portfolio',
+    weight: 3,
+    patterns: [
+      /(portofolio|portfolio|karya|showcase|ilustrator|agensi|\bcv\b|freelance|studi kasus|case study|profil usaha|company profile)/g,
+    ],
+  },
+  {
+    archetype: 'internal-tool',
+    weight: 3,
+    patterns: [
+      /(internal|admin|\bhr\b|\bhrd\b|karyawan|cuti|gudang|stok|kasir|\bpos\b|rekap|operasional|absensi|inventaris|approval|pengajuan|gaji|payroll)/g,
+    ],
+  },
+  {
+    archetype: 'saas',
+    weight: 2,
+    patterns: [
+      /(saas|aplikasi|tracker|manajemen|proyek|project|keuangan|budget|pengeluaran|pemasukan|tabungan|catat|produktif|kolaborasi|tim|dashboard|otomatis|fintech|\bkyc\b|revisi|\bai\b|\bcrm\b|habit)/g,
+    ],
+  },
+];
+
 export function detectArchetype(story: string): ProductArchetype {
   const s = story.toLowerCase();
-  if (/(jual|beli|toko|produk|kue|baju|merch|checkout|keranjang|pre-order|preorder|po\b|umkm|dagang|warung|olshop|marketplace|katalog)/.test(s)) {
-    return 'ecommerce';
+  let bestArchetype: ProductArchetype = 'custom';
+  let bestScore = 0;
+
+  for (const entry of ARCHETYPE_SIGNALS) {
+    let matches = 0;
+    for (const pattern of entry.patterns) {
+      const found = s.match(pattern);
+      if (found) matches += found.length;
+    }
+    const score = matches * entry.weight;
+    if (score > bestScore) {
+      bestScore = score;
+      bestArchetype = entry.archetype;
+    }
   }
-  if (/(booking|reservasi|jadwal|antrean|antrian|klinik|dokter|salon|barber|fotografer|studio|bengkel|jasa|janji temu|konsultasi)/.test(s)) {
-    return 'booking';
+
+  return bestArchetype;
+}
+
+interface Q1ExtractedSignals {
+  payment: boolean;
+  scheduling: boolean;
+  trackingData: boolean;
+  whatsappNotif: boolean;
+  onboardingAuth: boolean;
+  designUx: boolean;
+}
+
+function detectQ1Signals(story: string): Q1ExtractedSignals {
+  const s = story.toLowerCase();
+  return {
+    payment: /(bayar|pembayaran|qris|transfer|\bdp\b|checkout|ongkir|harga|invoice|tagihan|langganan|keuangan|budget|tabungan)/.test(s),
+    scheduling: /(jadwal|tanggal|kalender|booking|slot|antre|jam|mingguan|harian|deadline|reschedule)/.test(s),
+    trackingData: /(stok|catat|rekap|laporan|riwayat|progres|tracker|export|csv|pdf|dashboard|analitik|pengeluaran)/.test(s),
+    whatsappNotif: /(whatsapp|\bwa\b|notifikasi|pengingat|reminder|email|chat|follow.?up|konfirmasi)/.test(s),
+    onboardingAuth: /(login|daftar|verifikasi|\bkyc\b|onboarding|pemula|awam|role|akses|akun|tamu)/.test(s),
+    designUx: /(ui|ux|wireframe|figma|prototype|desain|tampilan|flow|alur|batal|bingung|ribet|ringkas)/.test(s),
+  };
+}
+
+interface Q1ContextExtraction {
+  persona: string;
+  coreGoal: string;
+  painPoint: string;
+  valueContext: string;
+}
+
+function capitalizeSentence(text: string): string {
+  const t = text.trim().replace(/^[,.:;\-\s]+/, '');
+  if (!t) return '';
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+
+function extractQ1Context(
+  cleanedStory: string,
+  blueprint: ArchetypeBlueprint,
+  productNameSuggestion: string,
+  prdPurpose: PrdPurpose
+): Q1ContextExtraction {
+  const purposeMeta = PRD_PURPOSE_MAP[prdPurpose];
+
+  // 1. Persona extraction
+  let persona = '';
+  const personaPatterns = [
+    /(?:saya\s+(?:seorang\s+)?|untuk\s+|bagi\s+|target(?:nya|\s+pengguna)?\s*(?:adalah|:)?\s*)([^,.!?]{3,75})/i,
+    /^([^,.!?]{3,70}?)\s+(?:yang\s+(?:butuh|ingin|mau|jualan|sering|perlu)|butuh|ingin|perlu)\b/i,
+  ];
+  for (const re of personaPatterns) {
+    const m = cleanedStory.match(re);
+    if (m?.[1]) {
+      const candidate = m[1]
+        .replace(/^(?:seorang|para|tim|user|pengguna)\s+/i, (prefix) =>
+          prefix.toLowerCase().startsWith('tim') || prefix.toLowerCase().startsWith('para')
+            ? prefix
+            : ''
+        )
+        .trim();
+      if (candidate.length >= 3) {
+        persona = capitalizeSentence(candidate);
+        break;
+      }
+    }
   }
-  if (/(belajar|kursus|kelas|edukasi|siswa|murid|mahasiswa|materi|kuis|bimbel|mentoring|komunitas belajar|sekolah)/.test(s)) {
-    return 'education';
+  if (!persona) {
+    persona =
+      cleanedStory.length > 110
+        ? `${cleanedStory.slice(0, 107)}...`
+        : cleanedStory || blueprint.defaultPersona;
   }
-  if (/(portofolio|portfolio|karya|showcase|desainer|arsitek|ilustrator|agensi|cv|freelance web)/.test(s)) {
-    return 'portfolio';
+
+  // 2. Core Goal extraction
+  let extractedGoalClause = '';
+  const primaryGoalMatch = cleanedStory.match(
+    /(?:agar|supaya|biar|sehingga|tujuannya(?:\s+(?:bikin|buat|untuk))?|untuk\s+membantu)\s+([^.!?]{6,160})/i
+  );
+  const secondaryGoalMatch = cleanedStory.match(
+    /(?:yang\s+(?:ingin|mau)|ingin)\s+([^.!?]{6,160})/i
+  );
+  if (primaryGoalMatch?.[1]) {
+    extractedGoalClause = primaryGoalMatch[1].trim().replace(/[.!?]+$/, '');
+  } else if (secondaryGoalMatch?.[1]) {
+    extractedGoalClause = secondaryGoalMatch[1].trim().replace(/[.!?]+$/, '');
   }
-  if (/(internal|admin|karyawan|hr\b|cuti|gudang|stok|kasir|pos\b|rekap|operasional|absensi|inventaris)/.test(s)) {
-    return 'internal-tool';
+
+  const coreGoal = extractedGoalClause
+    ? capitalizeSentence(
+        prdPurpose === 'ui-ux-process'
+          ? `Merancang alur UI/UX ${productNameSuggestion} agar ${extractedGoalClause}.`
+          : `Menghadirkan ${productNameSuggestion} (${purposeMeta.label}) agar ${extractedGoalClause}.`
+      )
+    : prdPurpose === 'ui-ux-process'
+    ? `Menjalankan proses UI/UX untuk ${productNameSuggestion} guna membantu ${blueprint.defaultValueContext}.`
+    : `Mewujudkan ${productNameSuggestion} (${purposeMeta.label}) untuk membantu ${blueprint.defaultValueContext}.`;
+
+  // 3. Pain Point extraction (explicit friction or pain implied via "tidak/tanpa ...")
+  let painPoint = '';
+  const explicitPainMatch = cleanedStory.match(
+    /((?:sering|sulit|susah|ribet|bingung|lambat|manual|bentrok|kewalahan)[^.!?]{3,130})/i
+  );
+  const impliedPainMatch = cleanedStory.match(
+    /(?:agar|supaya|biar)\s+([^.!?]{4,90}(?:tidak|tak|jangan)\s+[^.!?]{3,60})/i
+  );
+  const withoutPainMatch = cleanedStory.match(
+    /(tanpa\s+(?:antre|ribet|chat|rekap|bingung|batal|manual)[^.!?]{0,80})/i
+  );
+
+  if (explicitPainMatch?.[1]) {
+    painPoint = capitalizeSentence(explicitPainMatch[1].trim().replace(/[.!?]+$/, ''));
+  } else if (impliedPainMatch?.[1]) {
+    painPoint = `Mengatasi risiko: ${impliedPainMatch[1].trim().replace(/[.!?]+$/, '')}`;
+  } else if (withoutPainMatch?.[1]) {
+    painPoint = `Mengurangi hambatan ${withoutPainMatch[1].trim().replace(/[.!?]+$/, '')}`;
   }
-  if (/(saas|aplikasi|tracker|manajemen|proyek|project|keuangan|catat|produktif|kolaborasi|tim|ai\b|dashboard|otomatis|fintech|kyc)/.test(s)) {
-    return 'saas';
+  if (!painPoint) {
+    painPoint = blueprint.defaultPain;
   }
-  return 'custom';
+
+  const valueContext = extractedGoalClause
+    ? extractedGoalClause.slice(0, 90)
+    : blueprint.defaultValueContext;
+
+  return { persona, coreGoal, painPoint, valueContext };
+}
+
+function buildContextSignalTags(
+  signals: Q1ExtractedSignals,
+  prdPurpose: PrdPurpose
+): Record<AdaptiveQuestionId, { id: string; label: string; description: string }[]> {
+  const q2: { id: string; label: string; description: string }[] = [];
+  const q3: { id: string; label: string; description: string }[] = [];
+  const q4: { id: string; label: string; description: string }[] = [];
+  const q5: { id: string; label: string; description: string }[] = [];
+
+  if (signals.payment) {
+    q3.push({
+      id: 'sig-q3-pay',
+      label: prdPurpose === 'ui-ux-process' ? 'Flow Checkout & Konfirmasi Bayar' : 'Pembayaran Instan (QRIS / E-Wallet / DP)',
+      description: 'Menyederhanakan langkah bayar dengan status konfirmasi langsung dari cerita Q1',
+    });
+    q4.push({
+      id: 'sig-q4-pay',
+      label: 'Proses Bayar Ringkas & Transparan',
+      description: 'Total biaya dan status transaksi langsung jelas tanpa konfirmasi manual',
+    });
+  }
+  if (signals.scheduling) {
+    q2.push({
+      id: 'sig-q2-sched',
+      label: 'Cek Jadwal / Slot Tersedia Secara Langsung',
+      description: 'Mengurangi gesekan bentrok jadwal sesuai konteks cerita Q1',
+    });
+    q3.push({
+      id: 'sig-q3-sched',
+      label: 'Kalender Slot & Reschedule Mandiri',
+      description: 'Menampilkan ketersediaan waktu real-time dan opsi ubah jadwal mudah',
+    });
+  }
+  if (signals.trackingData) {
+    q3.push({
+      id: 'sig-q3-track',
+      label: 'Rekap Otomatis & Ringkasan Progres',
+      description: 'Menyajikan catatan data rapi tanpa perlu rekap spreadsheet manual',
+    });
+    q5.push({
+      id: 'sig-q5-track',
+      label: 'Arsip Riwayat & Laporan Berkala',
+      description: 'Membuat pengguna rutin kembali melihat ringkasan catatan mereka',
+    });
+  }
+  if (signals.whatsappNotif) {
+    q3.push({
+      id: 'sig-q3-wa',
+      label: 'Notifikasi & Ringkasan Otomatis (WA/Email)',
+      description: 'Mengirim konfirmasi dan pengingat otomatis tanpa chat manual satu per satu',
+    });
+    q5.push({
+      id: 'sig-q5-wa',
+      label: 'Pengingat Otomatis Tepat Waktu',
+      description: 'Mengajak pengguna kembali pada momen penting melalui notifikasi relevan',
+    });
+  }
+  if (signals.onboardingAuth) {
+    q2.push({
+      id: 'sig-q2-onb',
+      label: 'Onboarding Pemula dengan Panduan Langkah Demi Langkah',
+      description: 'Membantu pengguna baru atau awam langsung paham tanpa kebingungan verifikasi',
+    });
+    q4.push({
+      id: 'sig-q4-onb',
+      label: 'Aman & Ramah untuk Pengguna Pertama Kali',
+      description: 'Instruksi singkat dan contoh isian mencegah salah input saat awal pakai',
+    });
+  }
+  if (signals.designUx) {
+    q2.push({
+      id: 'sig-q2-ux',
+      label: 'Pemetaan Titik Rawan Bingung (Friction Audit)',
+      description: 'Menemukan bagian alur yang paling sering membuat pengguna berhenti',
+    });
+    q4.push({
+      id: 'sig-q4-ux',
+      label: 'Alur Ringkas dengan Penanganan Error Jelas',
+      description: 'Meminimalkan langkah berulang dan memberi tombol pemulihan yang mudah',
+    });
+  }
+
+  return { q2, q3, q4, q5 };
+}
+
+function dedupeTags<T extends { id: string; label: string; description?: string }>(tags: T[]): T[] {
+  const seenLabels = new Set<string>();
+  const result: T[] = [];
+  for (const tag of tags) {
+    const key = tag.label.trim().toLowerCase();
+    if (!seenLabels.has(key)) {
+      seenLabels.add(key);
+      result.push(tag);
+    }
+  }
+  return result;
 }
 
 function adaptQuestionsByPurpose(
   prdPurpose: PrdPurpose,
   blueprint: ArchetypeBlueprint,
-  valueContext: string
+  valueContext: string,
+  signals?: Q1ExtractedSignals
 ): Omit<ArchetypeBlueprint, 'label' | 'defaultProductName' | 'defaultPersona' | 'defaultPain' | 'defaultValueContext'> {
+  const signalTags = signals
+    ? buildContextSignalTags(signals, prdPurpose)
+    : { q2: [], q3: [], q4: [], q5: [] };
+
   if (prdPurpose === 'ui-ux-process') {
-    return UI_UX_PROCESS_BLUEPRINT;
+    return {
+      q2Prompt: 'Saat memulai proses UI/UX untuk proyek ini, fokus riset atau langkah pembuka mana saja yang ingin dijalankan?',
+      q2Tags: dedupeTags([...signalTags.q2, ...UI_UX_PROCESS_BLUEPRINT.q2Tags, ...blueprint.q2Tags.slice(0, 2)]),
+      q3Prompt: 'Artefak, layar, atau tahapan UI/UX apa saja yang ingin disertakan? (Bebas pilih sebanyak yang dibutuhkan)',
+      q3Tags: dedupeTags([...signalTags.q3, ...UI_UX_PROCESS_BLUEPRINT.q3Tags, ...blueprint.q3Tags.slice(0, 3)]),
+      q4Prompt: `Menurutmu, kriteria keberhasilan desain apa saja yang membuat user terbantu untuk ${valueContext}?`,
+      q4Tags: dedupeTags([...signalTags.q4, ...UI_UX_PROCESS_BLUEPRINT.q4Tags, ...blueprint.q4Tags.slice(0, 2)]),
+      q5Prompt: 'Mekanisme apa saja yang membuat dokumentasi & sistem desain ini terus dipakai kembali oleh tim?',
+      q5Tags: dedupeTags([...signalTags.q5, ...UI_UX_PROCESS_BLUEPRINT.q5Tags]),
+    };
   }
 
   if (prdPurpose === 'application') {
     return {
-      q2Prompt: 'Waktu pengguna pertama kali membuka aplikasi ini, satu aksi onboarding apa yang wajib berhasil?',
-      q2Tags: [
+      q2Prompt: 'Saat pengguna pertama kali membuka aplikasi, aksi atau pengalaman onboarding apa saja yang perlu langsung tersedia?',
+      q2Tags: dedupeTags([
+        ...signalTags.q2,
         ...blueprint.q2Tags.slice(0, 3),
         {
           id: 'app-q2-auth',
@@ -375,40 +656,42 @@ function adaptQuestionsByPurpose(
           label: 'Coba Fitur Inti Dulu (Guest Mode)',
           description: 'Mengurangi hambatan user awam sebelum diminta buat akun',
         },
-      ],
-      q3Prompt: 'Dari modul aplikasi berikut, mana 3 fitur yang paling wajib ada di rilis v1 aplikasi ini?',
-      q3Tags: blueprint.q3Tags,
-      q4Prompt: `Menurutmu, apa yang bikin pengguna betah memakai aplikasimu untuk ${valueContext}?`,
-      q4Tags: [
-        ...blueprint.q4Tags.slice(0, 3),
+      ]),
+      q3Prompt: 'Modul atau fitur aplikasi apa saja yang ingin kamu masukkan? (Bebas pilih tanpa batas)',
+      q3Tags: dedupeTags([...signalTags.q3, ...blueprint.q3Tags]),
+      q4Prompt: `Menurutmu, hal apa saja yang bikin pengguna yakin memakai aplikasimu untuk ${valueContext}?`,
+      q4Tags: dedupeTags([
+        ...signalTags.q4,
+        ...blueprint.q4Tags,
         {
           id: 'app-q4-mobile',
           label: 'Cepat, Ringan & Nyaman Dipakai Satu Tangan',
           description: 'Navigasi aplikasi responsif dan tetap ramah saat koneksi lambat',
         },
-      ],
-      q5Prompt: 'Apa yang bikin pengguna rutin membuka aplikasimu lagi setiap hari/minggu, bukan cuma sekali install?',
-      q5Tags: [
-        ...blueprint.q5Tags.slice(0, 3),
+      ]),
+      q5Prompt: 'Mekanisme apa saja yang bikin pengguna rutin membuka aplikasimu kembali setiap hari/minggu?',
+      q5Tags: dedupeTags([
+        ...signalTags.q5,
+        ...blueprint.q5Tags,
         {
           id: 'app-q5-sync',
           label: 'Notifikasi Cerdas & Data Tersinkron',
           description: 'Pengingat relevan dan riwayat pribadi selalu siap dibuka kembali',
         },
-      ],
+      ]),
     };
   }
 
   // Website mode
   return {
-    q2Prompt: 'Waktu pengunjung pertama kali mendarat di website ini, satu hal apa yang harus langsung dilakukan?',
-    q2Tags: blueprint.q2Tags,
-    q3Prompt: 'Dari halaman & fitur website berikut, mana 3 elemen yang paling wajib ada di versi pertama?',
-    q3Tags: blueprint.q3Tags,
-    q4Prompt: `Menurutmu, apa yang bikin pengunjung website mau melakukan ${valueContext}?`,
-    q4Tags: blueprint.q4Tags,
-    q5Prompt: 'Apakah yang bikin pengunjung bakal balik lagi membuka websitemu di lain waktu?',
-    q5Tags: blueprint.q5Tags,
+    q2Prompt: 'Saat pengunjung pertama kali membuka website ini, aksi pembuka apa saja yang perlu langsung jelas?',
+    q2Tags: dedupeTags([...signalTags.q2, ...blueprint.q2Tags]),
+    q3Prompt: 'Halaman atau fitur website apa saja yang ingin dimasukkan? (Bebas pilih tanpa batas)',
+    q3Tags: dedupeTags([...signalTags.q3, ...blueprint.q3Tags]),
+    q4Prompt: `Menurutmu, hal apa saja yang bikin pengunjung website mau ${valueContext}?`,
+    q4Tags: dedupeTags([...signalTags.q4, ...blueprint.q4Tags]),
+    q5Prompt: 'Alasan atau fitur apa saja yang bikin pengunjung bakal kembali lagi membuka websitemu?',
+    q5Tags: dedupeTags([...signalTags.q5, ...blueprint.q5Tags]),
   };
 }
 
@@ -416,12 +699,12 @@ function buildAdaptiveQuestions(
   prdPurpose: PrdPurpose,
   blueprint: ArchetypeBlueprint,
   previous?: DiscoveryState['questions'],
-  valueContextOverride?: string
+  valueContextOverride?: string,
+  signals?: Q1ExtractedSignals
 ): Record<AdaptiveQuestionId, AdaptiveQuestionConfig> {
   const preserveUserCustomTags = (
     qId: AdaptiveQuestionId,
-    aiTags: { id: string; label: string; description?: string }[],
-    maxSelect: number
+    aiTags: { id: string; label: string; description?: string }[]
   ) => {
     const prev = previous?.[qId];
     const customTags = prev?.tags.filter((t) => t.source === 'user') ?? [];
@@ -430,23 +713,22 @@ function buildAdaptiveQuestions(
       ...customTags,
     ];
     const validIds = new Set(mergedTags.map((t) => t.id));
-    const keptSelected = (prev?.selectedTagIds ?? [])
-      .filter((id) => validIds.has(id))
-      .slice(0, maxSelect);
+    const keptSelected = (prev?.selectedTagIds ?? []).filter((id) => validIds.has(id));
     return { mergedTags, keptSelected };
   };
 
   const adapted = adaptQuestionsByPurpose(
     prdPurpose,
     blueprint,
-    valueContextOverride ?? blueprint.defaultValueContext
+    valueContextOverride ?? blueprint.defaultValueContext,
+    signals
   );
 
   const now = Date.now();
-  const q2State = preserveUserCustomTags('q2', adapted.q2Tags, 1);
-  const q3State = preserveUserCustomTags('q3', adapted.q3Tags, 3);
-  const q4State = preserveUserCustomTags('q4', adapted.q4Tags, 2);
-  const q5State = preserveUserCustomTags('q5', adapted.q5Tags, 2);
+  const q2State = preserveUserCustomTags('q2', adapted.q2Tags);
+  const q3State = preserveUserCustomTags('q3', adapted.q3Tags);
+  const q4State = preserveUserCustomTags('q4', adapted.q4Tags);
+  const q5State = preserveUserCustomTags('q5', adapted.q5Tags);
 
   return {
     q2: {
@@ -459,10 +741,11 @@ function buildAdaptiveQuestions(
           ? 'Onboarding Pertama Aplikasi'
           : 'Aksi Pertama di Website',
       prompt: adapted.q2Prompt,
-      helperHint: 'Pilih 1 fokus paling awal, atau pilih Other untuk menulis pilihan sendiri.',
-      selectionMode: 'single',
+      helperHint:
+        'Pilih bebas satu atau beberapa fokus pembuka, atau tambah pilihan sendiri.',
+      selectionMode: 'unlimited',
       minSelect: 1,
-      maxSelect: 1,
+      maxSelect: null,
       tags: q2State.mergedTags,
       selectedTagIds: q2State.keptSelected,
       updatedAt: now,
@@ -472,15 +755,16 @@ function buildAdaptiveQuestions(
       stepNumber: 3,
       title:
         prdPurpose === 'ui-ux-process'
-          ? '3 Artefak UI/UX Wajib'
+          ? 'Artefak & Tahapan UI/UX'
           : prdPurpose === 'application'
-          ? '3 Fitur Wajib Aplikasi'
-          : '3 Fitur / Halaman Wajib Website',
+          ? 'Fitur & Modul Aplikasi'
+          : 'Fitur & Halaman Website',
       prompt: adapted.q3Prompt,
-      helperHint: 'Pilih maksimal 3 prioritas utama untuk MVP agar scope tetap fokus.',
-      selectionMode: 'multi',
+      helperHint:
+        'Pilih bebas sebanyak apa pun fitur atau artefak yang ingin masuk ke PRD (minimal 1).',
+      selectionMode: 'unlimited',
       minSelect: 1,
-      maxSelect: 3,
+      maxSelect: null,
       tags: q3State.mergedTags,
       selectedTagIds: q3State.keptSelected,
       updatedAt: now,
@@ -493,10 +777,11 @@ function buildAdaptiveQuestions(
           ? 'Indikator Keberhasilan Desain'
           : 'Daya Tarik Penggunaan (Value Hook)',
       prompt: adapted.q4Prompt,
-      helperHint: 'Pilih 1–2 alasan paling kuat yang membuat target user mau memakai/percaya.',
-      selectionMode: 'multi',
+      helperHint:
+        'Pilih bebas semua alasan yang membuat pengguna yakin memakai dan percaya pada produkmu.',
+      selectionMode: 'unlimited',
       minSelect: 1,
-      maxSelect: 2,
+      maxSelect: null,
       tags: q4State.mergedTags,
       selectedTagIds: q4State.keptSelected,
       updatedAt: now,
@@ -509,10 +794,11 @@ function buildAdaptiveQuestions(
           ? 'Siklus Iterasi & Pemakaian Ulang'
           : 'Alasan Kembali Lagi (Retention Loop)',
       prompt: adapted.q5Prompt,
-      helperHint: 'Pilih 1–2 mekanisme yang membuat pengguna atau tim terus kembali.',
-      selectionMode: 'multi',
+      helperHint:
+        'Pilih bebas semua mekanisme yang membuat pengguna atau tim terus kembali.',
+      selectionMode: 'unlimited',
       minSelect: 1,
-      maxSelect: 2,
+      maxSelect: null,
       tags: q5State.mergedTags,
       selectedTagIds: q5State.keptSelected,
       updatedAt: now,
@@ -544,15 +830,20 @@ function extractProductTitleFromStory(
   prdPurpose: PrdPurpose
 ): string {
   const cleaned = story.replace(/\s+/g, ' ').trim();
-  const match = cleaned.match(/(?:bikin|buat|membuat|membangun|merancang ulang|merancang|menyusun)\s+([^,.!?]+)/i);
+  const match = cleaned.match(
+    /(?:bikin|buat|membuat|membangun|merancang ulang|merancang|menyusun|mengembangkan|butuh|perlu)\s+([^,.!?]+)/i
+  );
   if (match && match[1]) {
     const beforeClause = match[1]
       .split(/\s+(?:agar|supaya|untuk|biar|sehingga|yang)\s+/i)[0]
       .trim();
-    if (beforeClause.length >= 4) {
+    if (
+      beforeClause.length >= 4 &&
+      !/^(?:memetakan|mencari|menemukan|menyelesaikan|mengatasi)\b/i.test(beforeClause)
+    ) {
       let truncated = beforeClause;
-      if (truncated.length > 40) {
-        const words = truncated.slice(0, 40).split(' ');
+      if (truncated.length > 42) {
+        const words = truncated.slice(0, 42).split(' ');
         if (words.length > 1) words.pop();
         truncated = words.join(' ');
       }
@@ -578,6 +869,7 @@ export function hydrateQuestionsFromStoryFallback(
   const blueprint = ARCHETYPE_BLUEPRINTS[archetype];
   const purposeMeta = PRD_PURPOSE_MAP[prdPurpose];
   const cleanedStory = story.replace(/\s+/g, ' ').trim();
+  const signals = detectQ1Signals(cleanedStory);
 
   const productNameSuggestion = extractProductTitleFromStory(
     cleanedStory,
@@ -585,27 +877,32 @@ export function hydrateQuestionsFromStoryFallback(
     prdPurpose
   );
 
+  const extracted = extractQ1Context(
+    cleanedStory,
+    blueprint,
+    productNameSuggestion,
+    prdPurpose
+  );
+
   const q1Summary: Q1ExtractedSummary = {
     prdPurpose,
     archetype,
     productNameSuggestion,
-    persona: cleanedStory.length > 140 ? `${cleanedStory.slice(0, 137)}...` : cleanedStory,
-    coreGoal:
-      prdPurpose === 'ui-ux-process'
-        ? `Menjalankan proses UI/UX untuk ${productNameSuggestion} guna membantu ${blueprint.defaultValueContext}.`
-        : `Mewujudkan ${productNameSuggestion} (${purposeMeta.label}) untuk membantu ${blueprint.defaultValueContext}.`,
-    painPoint: blueprint.defaultPain,
-    valueContext: blueprint.defaultValueContext,
+    persona: extracted.persona,
+    coreGoal: extracted.coreGoal,
+    painPoint: extracted.painPoint,
+    valueContext: extracted.valueContext,
   };
 
   const questions = buildAdaptiveQuestions(
     prdPurpose,
     blueprint,
     previousQuestions,
-    blueprint.defaultValueContext
+    extracted.valueContext,
+    signals
   );
 
-  const assistantReply = `Siap! Untuk tujuan **${purposeMeta.label}** pada konteks **${blueprint.label}** (${productNameSuggestion}), seluruh pertanyaan dan tag di **Pertanyaan 2, 3, 4, dan 5** sudah langsung disesuaikan. Silakan pilih tag yang paling cocok (atau klik **Other** untuk menambah sendiri).`;
+  const assistantReply = `Cerita Q1 dipahami untuk mode **${purposeMeta.label}** (**${blueprint.label}**). Target persona terdeteksi: **${extracted.persona}**, dengan fokus menyelesaikan kendala: *${extracted.painPoint}*. Pertanyaan 2–5 sudah disesuaikan dan kamu bebas memilih sebanyak apa pun tag yang cocok atau menambah pilihan baru.`;
 
   return {
     assistantReply,
@@ -667,6 +964,12 @@ export function buildWorkspaceFallback(
     label: 'Akses Awal & Langkah Pertama',
     description: 'Fondasi pertama pada alur yang dirancang',
   };
+  const firstStepLabels =
+    q2Selected.length > 0 ? q2Selected.map((t) => t.label).join(', ') : firstStep.label;
+  const firstStepDescriptions =
+    q2Selected.length > 1
+      ? q2Selected.map((t) => `${t.label}: ${t.description || 'Langkah awal pilihan'}`).join(' • ')
+      : firstStep.description || 'Langkah paling pertama dalam alur ini.';
 
   const mustFeatures =
     q3Selected.length > 0
@@ -769,12 +1072,12 @@ export function buildWorkspaceFallback(
     {
       id: 'flow-entry',
       title: `1. ${prdPurpose === 'ui-ux-process' ? 'Fondasi' : 'Entry'}: ${firstStep.label}`,
-      subtitle: firstStep.description || 'Langkah paling pertama dalam alur ini.',
+      subtitle: firstStepDescriptions,
       kind: 'flow-start',
       zone: 'business-flow',
       linkedSectionId: 'sec-flow-entry',
       details: {
-        purpose: `Memastikan tahap awal "${firstStep.label}" langsung memberi arah yang jelas sesuai mode ${purposeMeta.label}.`,
+        purpose: `Memastikan tahap awal (${firstStepLabels}) langsung memberi arah yang jelas sesuai mode ${purposeMeta.label}.`,
         actor: prdPurpose === 'ui-ux-process' ? 'UX Designer & Researcher' : 'Pengguna Baru',
         uiComponents:
           prdPurpose === 'ui-ux-process'
@@ -782,9 +1085,14 @@ export function buildWorkspaceFallback(
             : prdPurpose === 'application'
             ? ['App Launch / Splash', 'Quick Onboarding Sheet', 'Primary Action Button']
             : ['Above-the-Fold Hero', 'Primary CTA Button', 'Contextual Quick Guide'],
-        userStory: `Sebagai ${prdPurpose === 'ui-ux-process' ? 'desainer' : 'pengguna baru'}, langkah pertama saya adalah "${firstStep.label}" agar arah berikutnya terstruktur.`,
+        userStory: `Sebagai ${prdPurpose === 'ui-ux-process' ? 'desainer' : 'pengguna baru'}, langkah pertama saya mencakup ${firstStepLabels} agar arah berikutnya terstruktur.`,
         acceptanceCriteria: [
-          `Tahap "${firstStep.label}" dapat dicapai atau dijalankan tanpa hambatan awal yang rumit.`,
+          ...q2Selected.map(
+            (step) => `Tahap "${step.label}" dapat dicapai atau dijalankan tanpa hambatan awal yang rumit.`
+          ),
+          ...(q2Selected.length === 0
+            ? [`Tahap "${firstStep.label}" dapat dicapai tanpa hambatan awal yang rumit.`]
+            : []),
           'Tersedia panduan singkat yang mudah dipahami pengguna awam.',
         ],
         edgeCases: [
@@ -955,10 +1263,10 @@ export function buildWorkspaceFallback(
       title: `Batasan Scope MVP (${purposeMeta.label})`,
       content:
         prdPurpose === 'ui-ux-process'
-          ? 'Fokus fase ini adalah merampungkan riset UX, user flow, wireframe semua state, dan spesifikasi handoff. Implementasi kode backend atau integrasi produksi di luar lingkup dokumen proses UI/UX ini.'
+          ? `Fokus fase ini adalah merampungkan riset UX, user flow, dan ${mustFeatures.length} artefak UI/UX prioritas beserta spesifikasi handoff. Implementasi kode produksi di luar lingkup dokumen proses UI/UX ini.`
           : prdPurpose === 'application'
-          ? 'Fokus aplikasi v1 dibatasi pada 3 modul wajib inti, onboarding cepat, dan penanganan state dasar agar segera bisa diuji oleh pengguna nyata.'
-          : 'Fokus website v1 dibatasi pada struktur halaman inti dan 3 fitur wajib agar konversi dan penyampaian informasi segera berjalan efektif.',
+          ? `Fokus aplikasi v1 mencakup ${mustFeatures.length} modul pilihan utama, onboarding awal, dan penanganan state dasar agar segera siap diuji oleh pengguna nyata.`
+          : `Fokus website v1 mencakup struktur halaman inti dan ${mustFeatures.length} fitur prioritas pilihanmu agar konversi dan penyampaian informasi segera berjalan efektif.`,
     },
   ];
 

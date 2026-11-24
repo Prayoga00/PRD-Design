@@ -25,10 +25,10 @@ export const AdaptiveQuestionConfigSchema = z.object({
   title: z.string().min(1),
   prompt: z.string().min(1),
   helperHint: z.string().min(1),
-  selectionMode: z.enum(['single', 'multi']),
-  minSelect: z.number().int().min(1),
-  maxSelect: z.number().int().min(1).max(5),
-  tags: z.array(QuestionTagSchema).min(3).max(12),
+  selectionMode: z.enum(['single', 'multi', 'unlimited']).default('unlimited'),
+  minSelect: z.number().int().min(1).default(1),
+  maxSelect: z.number().int().min(1).max(100).nullable().optional().default(null),
+  tags: z.array(QuestionTagSchema).min(3).max(30),
   selectedTagIds: z.array(z.string()).default([]),
 });
 
@@ -117,9 +117,9 @@ export const PlanSectionSchema = z.object({
 
 export const GenerateWorkspaceOutputSchema = z.object({
   projectTitle: z.string().min(2).max(90),
-  blueprintNodes: z.array(RawBlueprintNodeSchema).min(4).max(20),
-  edges: z.array(PrdinEdgeSchema).min(2).max(30),
-  planSections: z.array(PlanSectionSchema).min(4).max(25),
+  blueprintNodes: z.array(RawBlueprintNodeSchema).min(4).max(40),
+  edges: z.array(PrdinEdgeSchema).min(2).max(60),
+  planSections: z.array(PlanSectionSchema).min(4).max(50),
   initialAssistantMessage: z.string().min(1),
 });
 

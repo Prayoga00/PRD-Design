@@ -15,9 +15,9 @@ export const PRD_PURPOSE_OPTIONS: PrdPurposeConfig[] = [
     label: 'UI / UX Proses',
     shortDesc: 'Riset UX, user flow, wireframe & handoff',
     q1Welcome:
-      'Halo! Mode **UI / UX Proses** aktif. Ceritakan satu target pengguna yang sedang kamu desain pengalamannya, dan kendala apa yang ingin diselesaikan lewat proses UI/UX ini? Pilihan tag di Pertanyaan 2–5 akan langsung menyesuaikan.',
+      'Mode **UI / UX Proses** aktif. Ceritakan siapa target penggunamu, kendala apa yang mereka alami, dan hasil desain apa yang ingin dicapai. Pilihan tag di Pertanyaan 2–5 akan langsung menyesuaikan — dan kamu bebas memilih sebanyak apa pun tag yang sesuai.',
     q1Placeholder:
-      'Contoh: Tim desain yang ingin merapikan alur checkout agar langkah bayar lebih ringkas...',
+      'Contoh: Desainer UI/UX yang merapikan alur checkout aplikasi belanja agar langkah bayar lebih ringkas...',
     starterStories: [
       {
         label: 'Redesign Alur Checkout',
@@ -38,7 +38,7 @@ export const PRD_PURPOSE_OPTIONS: PrdPurposeConfig[] = [
     label: 'Aplikasi',
     shortDesc: 'Fitur app, onboarding, state & integrasi',
     q1Welcome:
-      'Halo! Mode **Aplikasi** aktif. Ceritakan satu orang yang butuh aplikasi ini dan aktivitas inti apa yang ingin dipermudah? Pilihan fitur serta alur aplikasi di Pertanyaan 2–5 akan langsung ter-update.',
+      'Mode **Aplikasi** aktif. Ceritakan siapa pengguna utamamu dan aktivitas apa yang ingin mereka selesaikan lewat aplikasi ini. Pertanyaan 2–5 akan otomatis menyesuaikan konteks ceritamu dan bebas kamu pilih tanpa batas.',
     q1Placeholder:
       'Contoh: Pemilik kedai kopi butuh aplikasi kasir & stok agar penjualan otomatis sinkron...',
     starterStories: [
@@ -61,7 +61,7 @@ export const PRD_PURPOSE_OPTIONS: PrdPurposeConfig[] = [
     label: 'Website',
     shortDesc: 'Halaman web, alur konten & konversi',
     q1Welcome:
-      'Halo! Mode **Website** aktif. Ceritakan satu orang yang butuh website ini dan tujuannya membuat web untuk apa? Pilihan struktur & fitur website di Pertanyaan 2–5 akan langsung menyesuaikan ceritamu.',
+      'Mode **Website** aktif. Ceritakan siapa pengunjung websitemu, masalah yang ingin diatasi, dan tujuan utamanya. Pilihan struktur & fitur di Pertanyaan 2–5 akan langsung menyesuaikan ceritamu dan bebas dipilih tanpa batas.',
     q1Placeholder:
       'Contoh: Studio foto butuh website booking agar klien bisa cek tanggal kosong & bayar DP...',
     starterStories: [
