@@ -1,0 +1,222 @@
+@import "tailwindcss";
+@import "@xyflow/react/dist/style.css";
+
+@theme inline {
+  --font-sans: var(--font-sans), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-mono), ui-monospace, SFMono-Regular, monospace;
+}
+
+:root {
+  color-scheme: dark;
+  --u: clamp(0.68px, min(100vw / 1440, 100dvh / 1008), 1.35px);
+  --iris-bg: #0e0e0e;
+  --iris-surface-1: #151515;
+  --iris-surface-2: #19191c;
+  --iris-surface-3: #1d1d1d;
+  --iris-border: rgba(255, 255, 255, 0.08);
+  --iris-border-strong: rgba(255, 255, 255, 0.14);
+  --iris-text: #ffffff;
+  --iris-text-secondary: #8c8c8c;
+  --iris-text-muted: #6e6e6e;
+  --iris-blue: #2f6bff;
+  --iris-indigo: #4654f6;
+  --iris-violet: #5a4cf5;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+/* Top electric-blue + violet + faint cyan radial ambient glow */
+.iris-ambient-glow {
+  background:
+    radial-gradient(
+      52% 42% at 50% -4%,
+      rgba(64, 110, 255, 0.78) 0%,
+      rgba(64, 110, 255, 0.28) 42%,
+      rgba(14, 14, 14, 0) 78%
+    ),
+    radial-gradient(
+      36% 34% at 64% 6%,
+      rgba(124, 72, 240, 0.42) 0%,
+      rgba(90, 76, 245, 0.12) 48%,
+      rgba(14, 14, 14, 0) 76%
+    ),
+    radial-gradient(
+      32% 30% at 35% 8%,
+      rgba(56, 189, 248, 0.2) 0%,
+      rgba(47, 107, 255, 0.06) 50%,
+      rgba(14, 14, 14, 0) 78%
+    );
+}
+
+/* Composer 1.2u gradient hairline border: blue -> indigo -> violet -> blue */
+.iris-composer-shell {
+  border: 1.2px solid transparent;
+  background:
+    linear-gradient(#151515, #151515) padding-box,
+    linear-gradient(
+      125deg,
+      rgba(47, 107, 255, 0.85) 0%,
+      rgba(70, 84, 246, 0.72) 34%,
+      rgba(90, 76, 245, 0.88) 68%,
+      rgba(47, 107, 255, 0.82) 100%
+    )
+      border-box;
+  box-shadow:
+    0 20px 50px -24px rgba(47, 107, 255, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.iris-composer-shell:focus-within {
+  box-shadow:
+    0 22px 58px -20px rgba(47, 107, 255, 0.5),
+    0 0 0 1px rgba(90, 76, 245, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+/* Glass pill & tile surfaces */
+.iris-glass {
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  backdrop-filter: blur(14px);
+}
+
+.iris-surface-card {
+  background: linear-gradient(180deg, #19191b 0%, #151517 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition:
+    border-color 180ms ease,
+    background-color 180ms ease,
+    transform 180ms var(--ease-out),
+    box-shadow 180ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .iris-surface-card:hover {
+    border-color: rgba(90, 76, 245, 0.48);
+    transform: translateY(-2px);
+    box-shadow: 0 14px 30px -18px rgba(47, 107, 255, 0.45);
+  }
+}
+
+/* Orb radial mask melting plate black cleanly into #0E0E0E */
+.iris-orb-mask {
+  -webkit-mask-image: radial-gradient(circle, #000 61%, transparent 76%);
+  mask-image: radial-gradient(circle, #000 61%, transparent 76%);
+}
+
+/* Recent conversations downward fade */
+.iris-history-fade {
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 58%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 58%, transparent 100%);
+}
+
+/* Primary electric blue-to-violet gradient CTA */
+.iris-btn-gradient {
+  background: linear-gradient(135deg, #2f6bff 0%, #5a4cf5 100%);
+  color: #ffffff;
+  box-shadow: 0 8px 22px -10px rgba(47, 107, 255, 0.72);
+  transition: filter 160ms ease, transform 160ms var(--ease-out), opacity 160ms ease;
+}
+
+.iris-btn-gradient:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.iris-btn-gradient:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+/* Native <dialog> dark modal scroll containment & backdrop */
+dialog:modal {
+  overscroll-behavior: contain;
+}
+
+dialog::backdrop {
+  overflow: hidden;
+  overscroll-behavior: contain;
+  background-color: rgba(6, 7, 12, 0.74);
+  backdrop-filter: blur(8px);
+}
+
+/* Customized accessible dark scrollbars */
+.prdin-scroll {
+  --scrollbar-thumb: rgba(255, 255, 255, 0.16);
+  --scrollbar-track: transparent;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+  scrollbar-width: thin;
+}
+
+@supports not (scrollbar-color: auto) {
+  .prdin-scroll {
+    scrollbar-width: auto;
+  }
+  .prdin-scroll::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .prdin-scroll::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 9999px;
+  }
+  .prdin-scroll::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+  }
+}
+
+/* Dark React Flow canvas refinement */
+.react-flow {
+  color-scheme: dark;
+}
+
+.react-flow__attribution {
+  display: none;
+}
+
+.react-flow__controls-button {
+  background: #17171a !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #e4e4e7 !important;
+}
+
+/* Roadmap Kanban containment & drag-and-drop handle rules */
+.roadmap-column {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 290px auto 560px;
+}
+
+@supports not (content-visibility: auto) {
+  .roadmap-column {
+    contain: layout style paint;
+  }
+}
+
+.roadmap-drag-handle {
+  cursor: grab;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.roadmap-dragging,
+.roadmap-dragging * {
+  cursor: grabbing !important;
+}
+
+/* Subtle pulsing status beacon */
+@keyframes iris-beacon-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.55;
+    transform: scale(1.25);
+  }
+}
+
+.iris-beacon {
+  @media (prefers-reduced-motion: no-preference) {
+    animation: iris-beacon-pulse 2.4s var(--ease-out) infinite;
+  }
+}
