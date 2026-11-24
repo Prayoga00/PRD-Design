@@ -4,6 +4,7 @@ import { callStructuredJsonLlm } from '@/lib/ai/provider';
 import {
   AdaptiveQuestionConfigSchema,
   GenerateWorkspaceOutputSchema,
+  PrdBusinessContextSchema,
   PrdPurposeSchema,
   Q1ExtractedSummarySchema,
 } from '@/lib/schemas/ai-contracts';
@@ -31,6 +32,7 @@ const GenerateWorkspaceRequestSchema = z.object({
       q4: AdaptiveQuestionConfigSchema,
       q5: AdaptiveQuestionConfigSchema,
     }),
+    businessContext: PrdBusinessContextSchema.optional(),
   }),
   provider: z.enum(['auto', 'gemini', 'openai']).optional(),
 });
@@ -43,6 +45,16 @@ function summarizeDiscoveryForPrompt(discovery: DiscoveryState): string {
     return `${id.toUpperCase()} (${q.title}): ${selected.join(', ') || '-'}`;
   };
 
+  const biz = discovery.businessContext;
+  const bizLines = biz
+    ? [
+        `Target KPI & Sukses Bisnis: ${biz.successMetrics.trim() || '-'}`,
+        `Peran Aktor & Aturan Bisnis: ${biz.userRolesAndRules.trim() || '-'}`,
+        `Non-Goals (Out of Scope MVP): ${biz.nonGoals.trim() || '-'}`,
+        `Batasan & Spesifikasi Teknis (NFR): ${biz.technicalConstraints.trim() || '-'}`,
+      ]
+    : [];
+
   return [
     `Q1 Summary: ${JSON.stringify(discovery.q1Summary)}`,
     `Q1 Chat Stories: ${discovery.q1Messages.filter((m) => m.role === 'user').map((m) => m.content).join(' | ')}`,
@@ -50,6 +62,7 @@ function summarizeDiscoveryForPrompt(discovery: DiscoveryState): string {
     formatQ('q3'),
     formatQ('q4'),
     formatQ('q5'),
+    ...bizLines,
   ].join('\n');
 }
 
@@ -80,6 +93,7 @@ Ubah seluruh jawaban 5 pertanyaan menjadi struktur Workspace PRDin yang sinkron 
    - Mode "Website": landing entry -> seluruh halaman/fitur web pilihan -> konversi -> kunjungan ulang.
 3. edges berarah antar node (setiap source dan target wajib ada di blueprintNodes.id).
 4. planSections yang terhubung 1-to-1 (linkedNodeId dan linkedSectionId cocok) dengan penjelasan lengkap, user story, komponen/artefak UI spesifik (UI/UX-ready), acceptance criteria terukur, dan edge cases.
+5. Jika user mengisi businessContext (Target KPI, Peran Aktor & Aturan Bisnis, Non-Goals, atau Batasan Teknis/NFR), wajib tuangkan ke planSections kategori "summary", "specs", dan "non-goals" secara akurat dan terukur.
 
 Keluarkan HANYA JSON sesuai schema.`;
 

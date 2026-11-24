@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, UserPlus } from 'lucide-react';
 import { registerAccount, type UserRolePreference } from '@/lib/storage/auth-store';
 import { StudioShell } from '@/components/layout/StudioShell';
+import { PrdinLogoWordmark } from '@/components/ui/PrdinLogo';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -33,6 +34,9 @@ export default function RegisterPage() {
     <StudioShell breadcrumbs={['Home', 'Daftar']} statusLabel="Auth Lokal" statusCount="1">
       <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-5 pt-4 pb-14">
         <div className="iris-composer-shell rounded-2xl p-6 sm:p-7">
+          <div className="mb-4">
+            <PrdinLogoWordmark className="h-7 w-auto" decorative />
+          </div>
           <div className="flex items-center gap-2 text-xs font-semibold text-[#C4B5FD]">
             <UserPlus className="h-4 w-4 text-[#5A4CF5]" />
             Buat Akun PRDin

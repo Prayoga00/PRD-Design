@@ -211,7 +211,7 @@ export async function generateWorkspaceClient(input: {
   const purposeMeta = PRD_PURPOSE_MAP[input.discovery.prdPurpose ?? 'website'];
   const byokRaw = await callBrowserByokLlm(
     input.aiSettings,
-    `Kamu adalah PRDin Product & UX Systems Architect berbahasa Indonesia. Mode: ${purposeMeta.label}. Keluarkan HANYA valid JSON GenerateWorkspaceOutput.`,
+    `Kamu adalah PRDin Product & UX Systems Architect berbahasa Indonesia. Mode: ${purposeMeta.label}. Jika discovery.businessContext terisi (successMetrics, userRolesAndRules, nonGoals, technicalConstraints), integrasikan ke planSections kategori "summary", "specs", dan "non-goals" dengan metrik terukur. Keluarkan HANYA valid JSON GenerateWorkspaceOutput.`,
     `Discovery: ${JSON.stringify(input.discovery)}`
   );
   if (byokRaw) {

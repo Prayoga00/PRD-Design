@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Suspense, useCallback, useEffect, useState, useSyncExternalStore } from 'react';
+import React, { Suspense, useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -13,9 +13,11 @@ import {
   MessageSquare,
   Network,
   RotateCcw,
+  ShieldCheck,
 } from 'lucide-react';
 import type {
   AiSettings,
+  PrdPurpose,
   PrdinEdge,
   PrdinNode,
   RoadmapStatus,
@@ -34,6 +36,7 @@ import {
   hydrateQuestionsFromStoryFallback,
 } from '@/lib/engine/smart-fallback';
 import { createRoadmapTask } from '@/lib/engine/roadmap-defaults';
+import { validateWorkspacePrd } from '@/lib/validation/prd-validator';
 import {
   getServerStudioSnapshot,
   getStudioSnapshot,
@@ -48,6 +51,7 @@ import { InteractiveCanvas } from '@/components/workspace/InteractiveCanvas';
 import { WorkspaceAiChat } from '@/components/workspace/WorkspaceAiChat';
 import { RoadmapBoardView } from '@/components/workspace/RoadmapBoardView';
 import { PrdDownloadModal } from '@/components/workspace/PrdDownloadModal';
+import { PrdValidationModal } from '@/components/workspace/PrdValidationModal';
 import { ApiSettingsModal } from '@/components/workspace/ApiSettingsModal';
 
 type MobileTab = 'plan' | 'canvas' | 'chat';
@@ -75,6 +79,9 @@ function WorkspaceContent() {
   );
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isDownloadOpen, setIsDownloadOpen] = useState(false);
+  const [isValidationOpen, setIsValidationOpen] = useState(
+    () => searchParams.get('validate') === '1'
+  );
   const [isChatSending, setIsChatSending] = useState(false);
   const [chatError, setChatError] = useState<string | null>(null);
   const [focusRequestToken, setFocusRequestToken] = useState(0);
@@ -364,7 +371,38 @@ function WorkspaceContent() {
     }));
   };
 
-  if (!workspace) {
+  const handleChangeWorkspacePurpose = useCallback((nextPurpose: PrdPurpose) => {
+    updateStudioStore((prev) => {
+      if (!prev.workspace) return prev;
+      return {
+        ...prev,
+        discovery: {
+          ...prev.discovery,
+          prdPurpose: nextPurpose,
+          q1Summary: prev.discovery.q1Summary
+            ? { ...prev.discovery.q1Summary, prdPurpose: nextPurpose }
+            : null,
+        },
+        workspace: {
+          ...prev.workspace,
+          discovery: {
+            ...prev.workspace.discovery,
+            prdPurpose: nextPurpose,
+            q1Summary: prev.workspace.discovery.q1Summary
+              ? { ...prev.workspace.discovery.q1Summary, prdPurpose: nextPurpose }
+              : null,
+          },
+        },
+      };
+    });
+  }, []);
+
+  const validation = useMemo(
+    () => (workspace ? validateWorkspacePrd(workspace) : null),
+    [workspace]
+  );
+
+  if (!workspace || !validation) {
     return (
       <StudioShell
         breadcrumbs={['Home', 'Workspace']}
@@ -512,6 +550,34 @@ function WorkspaceContent() {
 
             <button
               type="button"
+              onClick={() => setIsValidationOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.12] bg-[#16161B] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:border-[#2F6BFF]/60 hover:bg-[#1C1F2B]"
+            >
+              <ShieldCheck
+                className={`h-3.5 w-3.5 ${
+                  validation.status === 'ready'
+                    ? 'text-[#38BDF8]'
+                    : validation.status === 'needs-improvement'
+                    ? 'text-amber-400'
+                    : 'text-rose-400'
+                }`}
+              />
+              <span>Validasi PRD</span>
+              <span
+                className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
+                  validation.status === 'ready'
+                    ? 'bg-[#38BDF8]/15 text-[#7DD3FC]'
+                    : validation.status === 'needs-improvement'
+                    ? 'bg-amber-500/20 text-amber-300'
+                    : 'bg-rose-500/20 text-rose-300'
+                }`}
+              >
+                {validation.score}/100
+              </span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => setIsDownloadOpen(true)}
               className="iris-btn-gradient inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold"
             >
@@ -575,6 +641,7 @@ function WorkspaceContent() {
                     nodes={workspace.nodes}
                     roadmapTasks={roadmapTasks}
                     selectedNodeId={workspace.selectedNodeId}
+                    validation={validation}
                     onSelectNodeFromPlan={(nodeId) => {
                       updateStudioStore((prev) =>
                         prev.workspace
@@ -603,6 +670,7 @@ function WorkspaceContent() {
                     onMoveTask={handleMoveTask}
                     onDeleteTask={handleDeleteTask}
                     onOpenRoadmapDetail={() => setWorkspaceMode('roadmap')}
+                    onOpenValidation={() => setIsValidationOpen(true)}
                   />
                 </div>
 
@@ -657,6 +725,30 @@ function WorkspaceContent() {
           open={isDownloadOpen}
           workspace={workspace}
           onClose={() => setIsDownloadOpen(false)}
+          onOpenValidation={() => setIsValidationOpen(true)}
+        />
+
+        <PrdValidationModal
+          open={isValidationOpen}
+          workspace={workspace}
+          onClose={() => setIsValidationOpen(false)}
+          onFocusNode={(nodeId) => {
+            updateStudioStore((prev) =>
+              prev.workspace
+                ? { ...prev, workspace: { ...prev.workspace, selectedNodeId: nodeId } }
+                : prev
+            );
+            setWorkspaceMode('studio');
+            setFocusRequestToken((n) => n + 1);
+            setMobileTab('canvas');
+          }}
+          onFixWithAi={(prompt) => {
+            setWorkspaceMode('studio');
+            setMobileTab('chat');
+            void handleSendWorkspaceChat(prompt);
+          }}
+          onChangeWorkspacePurpose={handleChangeWorkspacePurpose}
+          onOpenDownload={() => setIsDownloadOpen(true)}
         />
       </StudioShell>
 

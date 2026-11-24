@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { Suspense, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowRight,
   ChevronDown,
@@ -13,6 +13,7 @@ import {
   PenTool,
   Plus,
   Send,
+  ShieldCheck,
   Smartphone,
   Sparkles,
 } from 'lucide-react';
@@ -34,8 +35,10 @@ import {
 } from '@/lib/storage/studio-store';
 import { handleImeSafeEnterSubmit } from '@/lib/utils/keyboard';
 import { StudioShell } from '@/components/layout/StudioShell';
+import { PrdinLogoWordmark } from '@/components/ui/PrdinLogo';
 import { GlassOrb } from '@/components/home/GlassOrb';
 import { HeroVisual } from '@/components/home/HeroVisual';
+import { PrdStandardsShowcase } from '@/components/home/PrdStandardsShowcase';
 import { StepByStepShowcase } from '@/components/home/StepByStepShowcase';
 
 const PURPOSE_CARD_STYLES: Record<
@@ -117,8 +120,9 @@ interface SpeechRecognitionInstance {
   stop: () => void;
 }
 
-export default function HomePage() {
+function HomePageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const auth = useSyncExternalStore(subscribeAuth, getAuthSnapshot, getServerAuthSnapshot);
   const studio = useSyncExternalStore(
     subscribeStudio,
@@ -126,7 +130,12 @@ export default function HomePage() {
     getServerStudioSnapshot
   );
 
-  const [homeTab, setHomeTab] = useState<'chat' | 'overview'>('chat');
+  const tabParam = searchParams.get('tab');
+  const homeTab: 'chat' | 'overview' | 'standards' =
+    tabParam === 'overview' || tabParam === 'standards' ? tabParam : 'chat';
+  const setHomeTab = (nextTab: 'chat' | 'overview' | 'standards') => {
+    router.replace(nextTab === 'chat' ? '/' : `/?tab=${nextTab}`, { scroll: false });
+  };
   const [selectedPurpose, setSelectedPurpose] = useState<PrdPurpose>('website');
   const [thinkMode, setThinkMode] = useState<'normal' | 'deep-think'>('normal');
   const [draft, setDraft] = useState('');
@@ -442,24 +451,59 @@ export default function HomePage() {
       tabs={[
         { id: 'chat', label: 'Chat Mode' },
         { id: 'overview', label: 'Overview' },
+        { id: 'standards', label: 'Standar & Validasi' },
       ]}
-      onSelectTab={(tabId) => setHomeTab(tabId as 'chat' | 'overview')}
+      onSelectTab={(tabId) => setHomeTab(tabId as 'chat' | 'overview' | 'standards')}
       railRef={railRef}
       topBarRef={topBarRef}
     >
-      {homeTab === 'overview' ? (
+      {homeTab === 'standards' ? (
+        <main className="mx-auto w-full max-w-[1200px] space-y-6 px-4 pt-2 pb-12 sm:px-6">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="space-y-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-[#2F6BFF]/35 bg-[#2F6BFF]/15 px-3 py-1 text-xs font-medium text-[#93C5FD]">
+                <ShieldCheck className="h-3.5 w-3.5" />
+                Standar PRD &amp; Validasi Berbasis Tujuan
+              </span>
+              <h1 className="text-2xl font-medium tracking-tight text-white sm:text-3xl">
+                Validasi PRD untuk UI/UX Proses, Website, dan Aplikasi.
+              </h1>
+              <p className="max-w-2xl text-xs leading-relaxed text-[#8C8C8C] sm:text-sm">
+                Pelajari struktur PRD 7 bagian yang bebas ambigu beserta kriteria validasi otomatis dan target KPI bisnis bawaan untuk setiap tujuan proyek.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => handlePurposeCardClick(selectedPurpose)}
+              className="iris-btn-gradient inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold"
+            >
+              Mulai Ask PRD
+              <ArrowRight className="h-3.5 w-3.5" />
+            </button>
+          </div>
+
+          <PrdStandardsShowcase
+            workspace={studio.workspace}
+            onStartWithPurpose={handlePurposeCardClick}
+            onOpenWorkspaceValidation={() => router.push('/workspace?validate=1')}
+          />
+        </main>
+      ) : homeTab === 'overview' ? (
         <main className="mx-auto w-full max-w-[1200px] space-y-8 px-4 pt-2 pb-12 sm:px-6">
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_1.05fr] lg:items-center">
             <div className="space-y-4">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-[#2F6BFF]/35 bg-[#2F6BFF]/15 px-3 py-1 text-xs font-medium text-[#93C5FD]">
-                <Sparkles className="h-3.5 w-3.5" />
-                PRDin Architecture Overview
-              </span>
+              <div className="flex flex-wrap items-center gap-3">
+                <PrdinLogoWordmark className="h-7 w-auto" title="PRDin" />
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-[#2F6BFF]/35 bg-[#2F6BFF]/15 px-3 py-1 text-xs font-medium text-[#93C5FD]">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Architecture Overview
+                </span>
+              </div>
               <h1 className="text-2xl font-medium tracking-tight text-white sm:text-4xl">
-                Dari 5 Pertanyaan Adaptif ke Workspace Visual &amp; Roadmap Siap Eksekusi.
+                Dari 5 Pertanyaan Adaptif ke PRD Tervalidasi, Canvas Visual &amp; Roadmap.
               </h1>
               <p className="text-sm leading-relaxed text-[#8C8C8C]">
-                Pilih tujuan PRD, jawab Q1 dengan bahasa sehari-hari, kunci tag Q2–Q5, lalu sunting Plan Text, Canvas React Flow, Kanban Roadmap, dan ekspor Markdown + Mermaid.
+                Pilih tujuan PRD (UI/UX Proses, Aplikasi, atau Website), jawab Q1–Q5 + Detail Bisnis (KPI, Role, Non-Goals, NFR), lalu sunting Plan Text, Canvas React Flow, Validasi Kelayakan PRD, dan ekspor Markdown + Mermaid.
               </p>
               <div className="flex flex-wrap gap-3 pt-1">
                 <button
@@ -469,6 +513,13 @@ export default function HomePage() {
                 >
                   Mulai Ask PRD (5 Pertanyaan)
                   <ArrowRight className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setHomeTab('standards')}
+                  className="rounded-xl border border-white/[0.1] bg-[#161619] px-4 py-2.5 text-xs font-semibold text-[#93C5FD] hover:bg-[#1E1E24]"
+                >
+                  Lihat Standar &amp; Validasi PRD
                 </button>
                 <button
                   type="button"
@@ -484,6 +535,12 @@ export default function HomePage() {
           </div>
 
           <StepByStepShowcase />
+
+          <PrdStandardsShowcase
+            workspace={studio.workspace}
+            onStartWithPurpose={handlePurposeCardClick}
+            onOpenWorkspaceValidation={() => router.push('/workspace?validate=1')}
+          />
         </main>
       ) : (
         <main className="mx-auto flex w-full max-w-[min(100%,calc(708*var(--u)))] flex-1 flex-col items-center justify-center px-4 pt-2 pb-8 sm:px-0">
@@ -837,5 +894,13 @@ export default function HomePage() {
         </main>
       )}
     </StudioShell>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={<div className="min-h-dvh bg-[#0E0E0E]" />}>
+      <HomePageContent />
+    </Suspense>
   );
 }

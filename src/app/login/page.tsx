@@ -11,6 +11,7 @@ import {
 } from '@/lib/storage/auth-store';
 import { getStudioSnapshot } from '@/lib/storage/studio-store';
 import { StudioShell } from '@/components/layout/StudioShell';
+import { PrdinLogoWordmark } from '@/components/ui/PrdinLogo';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -67,6 +68,9 @@ export default function LoginPage() {
     <StudioShell breadcrumbs={['Home', 'Masuk']} statusLabel="Auth Lokal" statusCount="1">
       <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-5 pt-4 pb-14">
         <div className="iris-composer-shell rounded-2xl p-6 sm:p-7">
+          <div className="mb-4">
+            <PrdinLogoWordmark className="h-7 w-auto" decorative />
+          </div>
           <div className="flex items-center gap-2 text-xs font-semibold text-[#93C5FD]">
             <LogIn className="h-4 w-4 text-[#2F6BFF]" />
             Masuk ke PRDin

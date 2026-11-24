@@ -3,6 +3,7 @@ import type {
   AdaptiveQuestionId,
   DiscoveryState,
   PlanSection,
+  PrdBusinessContext,
   PrdPurpose,
   ProductArchetype,
   Q1ExtractedSummary,
@@ -806,6 +807,15 @@ function buildAdaptiveQuestions(
   };
 }
 
+export function createEmptyBusinessContext(): PrdBusinessContext {
+  return {
+    successMetrics: '',
+    userRolesAndRules: '',
+    nonGoals: '',
+    technicalConstraints: '',
+  };
+}
+
 export function createInitialDiscoveryState(prdPurpose: PrdPurpose = 'website'): DiscoveryState {
   const blueprint = ARCHETYPE_BLUEPRINTS.ecommerce;
   const purposeMeta = PRD_PURPOSE_MAP[prdPurpose];
@@ -821,6 +831,7 @@ export function createInitialDiscoveryState(prdPurpose: PrdPurpose = 'website'):
     ],
     q1Summary: null,
     questions: buildAdaptiveQuestions(prdPurpose, blueprint),
+    businessContext: createEmptyBusinessContext(),
   };
 }
 
@@ -1232,12 +1243,44 @@ export function buildWorkspaceFallback(
     label: prdPurpose === 'ui-ux-process' ? 'Riset -> Flow' : 'Onboarding',
   });
 
+  const biz = discovery.businessContext;
+  const customKpi = biz?.successMetrics?.trim() ?? '';
+  const customRoles = biz?.userRolesAndRules?.trim() ?? '';
+  const customNonGoals = biz?.nonGoals?.trim() ?? '';
+  const customTech = biz?.technicalConstraints?.trim() ?? '';
+
+  const summaryParts = [
+    `Tujuan Pembuatan PRD: ${purposeMeta.label}`,
+    q1.coreGoal,
+    `Masalah utama yang diselesaikan: ${q1.painPoint}\nKriteria / Daya tarik utama: ${valueHooks}.\nMekanisme keberlanjutan / retensi: ${retentionHooks}.`,
+  ];
+  if (customKpi) {
+    summaryParts.push(`Target KPI & Keberhasilan Bisnis:\n${customKpi}`);
+  }
+
+  const extraSpecSections: PlanSection[] = [];
+  if (customRoles || customTech) {
+    const specLines: string[] = [];
+    if (customRoles) {
+      specLines.push(`Peran Aktor & Aturan Bisnis:\n${customRoles}`);
+    }
+    if (customTech) {
+      specLines.push(`Batasan Proyek & Spesifikasi Teknis (NFR):\n${customTech}`);
+    }
+    extraSpecSections.push({
+      id: 'sec-tech-specs',
+      category: 'specs',
+      title: `Spesifikasi Teknis & Aturan Bisnis (${purposeMeta.label})`,
+      content: specLines.join('\n\n'),
+    });
+  }
+
   const planSections: PlanSection[] = [
     {
       id: 'sec-summary',
       category: 'summary',
       title: `Ringkasan (${purposeMeta.label}): ${q1.productNameSuggestion}`,
-      content: `Tujuan Pembuatan PRD: ${purposeMeta.label}\n\n${q1.coreGoal}\n\nMasalah utama yang diselesaikan: ${q1.painPoint}\nKriteria / Daya tarik utama: ${valueHooks}.\nMekanisme keberlanjutan / retensi: ${retentionHooks}.`,
+      content: summaryParts.join('\n\n'),
     },
     ...blueprintNodes.map((node): PlanSection => {
       const category = node.zone === 'ux-research' ? 'ux-research' : 'business-flow';
@@ -1257,16 +1300,18 @@ export function buildWorkspaceFallback(
         linkedNodeId: node.id,
       };
     }),
+    ...extraSpecSections,
     {
       id: 'sec-non-goals',
       category: 'non-goals',
       title: `Batasan Scope MVP (${purposeMeta.label})`,
       content:
-        prdPurpose === 'ui-ux-process'
+        customNonGoals ||
+        (prdPurpose === 'ui-ux-process'
           ? `Fokus fase ini adalah merampungkan riset UX, user flow, dan ${mustFeatures.length} artefak UI/UX prioritas beserta spesifikasi handoff. Implementasi kode produksi di luar lingkup dokumen proses UI/UX ini.`
           : prdPurpose === 'application'
           ? `Fokus aplikasi v1 mencakup ${mustFeatures.length} modul pilihan utama, onboarding awal, dan penanganan state dasar agar segera siap diuji oleh pengguna nyata.`
-          : `Fokus website v1 mencakup struktur halaman inti dan ${mustFeatures.length} fitur prioritas pilihanmu agar konversi dan penyampaian informasi segera berjalan efektif.`,
+          : `Fokus website v1 mencakup struktur halaman inti dan ${mustFeatures.length} fitur prioritas pilihanmu agar konversi dan penyampaian informasi segera berjalan efektif.`),
     },
   ];
 
@@ -1276,6 +1321,54 @@ export function buildWorkspaceFallback(
     edges,
     planSections,
     initialAssistantMessage: `Workspace **${q1.productNameSuggestion}** (Mode: **${purposeMeta.label}**) siap! Di tengah ada **UX Research Board** & **Struktur Flow Kerja** yang bisa kamu zoom in/out. Klik node mana saja untuk melihat detail penjelasannya di panel **Plan Text** sebelah kiri, atau tulis instruksi di chat ini.`,
+  };
+}
+
+function quantifyVagueCriterion(text: string): string {
+  return text
+    .replace(/mudah dipahami pengguna awam/gi, 'dapat dipahami pengguna awam dalam <= 5 detik')
+    .replace(/mudah diperbaiki/gi, 'dapat diperbaiki dalam <= 2 klik')
+    .replace(/jalur keluar atau perbaikan yang mudah/gi, 'jalur keluar atau perbaikan dalam <= 2 klik')
+    .replace(/\bmudah\b/gi, 'dalam <= 2 klik')
+    .replace(/\bcepat\b/gi, 'dalam <= 2 detik')
+    .replace(/\bintuitif\b/gi, 'dengan label aksi eksplisit <= 3 langkah')
+    .replace(/\bsimpel\b|\bsederhana\b/gi, 'dalam <= 3 langkah');
+}
+
+function buildPurposeTechSpecsContent(prdPurpose: PrdPurpose): {
+  title: string;
+  content: string;
+} {
+  if (prdPurpose === 'ui-ux-process') {
+    return {
+      title: 'Spesifikasi UI States, Design System & Handoff Developer',
+      content: [
+        '1. Kelengkapan 4 State Layar: setiap layar inti wajib memiliki wireframe/komponen untuk state Normal, Loading (Skeleton), Empty State (ilustrasi + CTA), dan Error State (pesan pemulihan jelas).',
+        '2. Design System & Token: gunakan skala spasi 8pt grid, token warna semantik, dan komponen reusable Figma dengan auto-layout.',
+        '3. Aksesibilitas (WCAG AA): rasio kontras teks minimal 4.5:1, ukuran tap target interaktif minimal 44x44px di mobile (viewport 360px–375px), serta urutan fokus keyboard yang logis.',
+        '4. Developer Handoff & Design QA: sertakan anotasi interaksi, microcopy tombol aktif, dan checklist QA desain sebelum rilis.',
+      ].join('\n'),
+    };
+  }
+  if (prdPurpose === 'application') {
+    return {
+      title: 'Spesifikasi Teknis Aplikasi (API, Keamanan & Offline Recovery)',
+      content: [
+        '1. Arsitektur & Integrasi API/Data: seluruh transaksi dan perubahan data disinkronkan lewat REST/JSON API dengan skema database tervalidasi dan mekanisme retry otomatis.',
+        '2. Keamanan & Hak Akses: terapkan autentikasi sesi yang aman, validasi input di server, otorisasi berbasis role, serta perlindungan data sensitif pengguna.',
+        '3. Penanganan System State & Offline: setiap modul menyediakan Loading Skeleton, Empty State, serta penanganan Offline / Koneksi Terputus (antrean lokal atau tombol Coba Lagi tanpa kehilangan draft).',
+        '4. Target Performa: response time API <= 300ms pada persentil P95 dan transisi layar tetap responsif tanpa blocking UI.',
+      ].join('\n'),
+    };
+  }
+  return {
+    title: 'Spesifikasi Teknis Website (Responsif, SEO & Performa)',
+    content: [
+      '1. Responsif Lintas Perangkat: tata letak adaptif mulai viewport mobile 375px hingga desktop 1440px tanpa horizontal scroll, dengan tap target >= 44x44px.',
+      '2. Standar SEO & Metadata: setiap halaman publik memiliki tag <title> unik, meta description, Open Graph, hierarki heading H1–H3 yang benar, dan atribut alt pada gambar.',
+      '3. Target Performa Web: Largest Contentful Paint (LCP) <= 2.5 detik dan Cumulative Layout Shift (CLS) < 0.1.',
+      '4. Validasi & Keamanan Form: validasi input inline sebelum submit dan pesan error yang jelas saat pengiriman gagal.',
+    ].join('\n'),
   };
 }
 
@@ -1293,6 +1386,118 @@ export function applyFallbackChatCommand(
     selectedNode && selectedNode.id !== 'flow-entry'
       ? selectedNode
       : decisionNode ?? lastFlowNode ?? selectedNode;
+
+  if (/(acceptance criteria|metrik terukur|kuantitatif)/.test(lower)) {
+    const upgradedNodes = flowNodes.map((node) => {
+      const nextCriteria =
+        node.data.details.acceptanceCriteria.length > 0
+          ? node.data.details.acceptanceCriteria.map((ac) => quantifyVagueCriterion(ac))
+          : [`Tahap "${node.data.title}" selesai diverifikasi dalam <= 3 langkah dengan status feedback jelas.`];
+      const nextEdges =
+        node.data.details.edgeCases.length > 0
+          ? node.data.details.edgeCases
+          : [`Terjadi error validasi atau timeout jaringan pada "${node.data.title}": tampilkan pesan pemulihan.`];
+
+      return {
+        id: node.id,
+        title: node.data.title,
+        subtitle: node.data.subtitle,
+        kind: node.data.kind,
+        zone: node.data.zone,
+        linkedSectionId: node.data.linkedSectionId,
+        details: {
+          ...node.data.details,
+          acceptanceCriteria: nextCriteria,
+          edgeCases: nextEdges,
+        },
+      };
+    });
+
+    const upgradedSections: PlanSection[] = upgradedNodes.map((node) => ({
+      id: node.linkedSectionId,
+      category: 'business-flow',
+      title: node.title,
+      linkedNodeId: node.id,
+      content: [
+        `Tujuan: ${node.details.purpose}`,
+        `Aktor: ${node.details.actor}`,
+        `User Story: ${node.details.userStory}`,
+        `Komponen / Artefak UI: ${node.details.uiComponents.join(', ')}`,
+        `Acceptance Criteria:\n- ${node.details.acceptanceCriteria.join('\n- ')}`,
+        `Edge Cases:\n- ${node.details.edgeCases.join('\n- ')}`,
+      ].join('\n\n'),
+    }));
+
+    return {
+      assistantMessage:
+        'Saya sudah memperkuat **Acceptance Criteria** di seluruh tahap flow agar memakai metrik terukur (batas detik/klik) serta memastikan seluruh **Edge Cases** terisi.',
+      patch: {
+        upsertNodes: upgradedNodes,
+        upsertPlanSections: upgradedSections,
+      },
+    };
+  }
+
+  if (
+    /(spesifikasi teknis|spesifikasi handoff|spesifikasi 4 state|design system|wcag|\bseo\b|open graph|\blcp\b|375px|300ms|offline\/koneksi|integrasi api|hak akses|nfr)/.test(
+      lower
+    )
+  ) {
+    const spec = buildPurposeTechSpecsContent(prdPurpose);
+    return {
+      assistantMessage: `Saya menambahkan bagian **${spec.title}** ke panel **Plan Text** (kategori Spesifikasi Teknis) sesuai mode **${PRD_PURPOSE_MAP[prdPurpose].label}**.`,
+      patch: {
+        upsertPlanSections: [
+          {
+            id: 'sec-tech-specs',
+            category: 'specs',
+            title: spec.title,
+            content: spec.content,
+          },
+        ],
+      },
+    };
+  }
+
+  if (/(executive summary|problem statement|proposed solution)/.test(lower)) {
+    const q1 = workspace.discovery.q1Summary;
+    const summarySec = workspace.planSections.find((s) => s.category === 'summary');
+    return {
+      assistantMessage:
+        'Saya sudah melengkapi **Executive Summary** dengan Problem Statement, Proposed Solution, dan target KPI terukur.',
+      patch: {
+        upsertPlanSections: [
+          {
+            id: summarySec?.id ?? 'sec-summary',
+            category: 'summary',
+            title: summarySec?.title ?? `Ringkasan (${PRD_PURPOSE_MAP[prdPurpose].label}): ${workspace.projectTitle}`,
+            content: [
+              `Problem Statement: ${q1?.painPoint ?? 'Pengguna mengalami hambatan pada alur kerja manual saat ini.'}`,
+              `Proposed Solution: ${q1?.coreGoal ?? workspace.projectTitle} dengan alur terstruktur mode ${PRD_PURPOSE_MAP[prdPurpose].label}.`,
+              'Success Criteria: >= 80% pengguna menyelesaikan alur utama dalam <= 3 menit dengan tingkat error input < 2%.',
+            ].join('\n\n'),
+          },
+        ],
+      },
+    };
+  }
+
+  if (/(non-goal|batasan scope|out of scope)/.test(lower)) {
+    return {
+      assistantMessage:
+        'Saya sudah menambahkan bagian **Batasan Scope MVP (Non-Goals)** pada panel Plan Text agar fokus rilis awal terjaga.',
+      patch: {
+        upsertPlanSections: [
+          {
+            id: 'sec-non-goals',
+            category: 'non-goals',
+            title: `Batasan Scope MVP (${PRD_PURPOSE_MAP[prdPurpose].label})`,
+            content: `Fitur sekunder di luar alur inti ${PRD_PURPOSE_MAP[prdPurpose].label} ditunda ke iterasi v1.1 agar validasi MVP cepat dirilis.`,
+          },
+        ],
+      },
+    };
+  }
 
   if (/(tambah|add|buatkan|sisip|edge case|kendala|retur|pembatalan|pembayaran|notifikasi|step|alur|flow)/.test(lower)) {
     const cleanTopic = userMessage

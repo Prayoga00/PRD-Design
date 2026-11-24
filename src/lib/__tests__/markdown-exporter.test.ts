@@ -52,9 +52,45 @@ describe('markdown-exporter', () => {
     expect(md).toContain('```mermaid');
     expect(md).toContain('## 4. Detail Perencanaan & Spesifikasi per Tahap');
     expect(md).toContain('## 5. Non-Goals, Risks & Next Steps');
+    expect(md).toContain('## 7. Hasil Validasi PRD (Website)');
+    expect(md).toContain('Skor Kelayakan PRD:');
     expect(mermaid).toContain('flowchart LR');
     expect(mermaid).toContain('subgraph UX_Research');
     expect(mermaid).toContain('subgraph Business_Flow');
     expect(slugifyFilename('Toko Kue Ibu Sari!')).toBe('prdin-toko-kue-ibu-sari.md');
+  });
+
+  it('exports custom businessContext KPIs, roles/business rules, non-goals, and specs into PRD Markdown', () => {
+    const discovery = createInitialDiscoveryState('website');
+    const hydrated = hydrateQuestionsFromStoryFallback(
+      'Studio foto butuh website booking agar klien bisa bayar DP.',
+      discovery.questions,
+      'website'
+    );
+    discovery.q1Summary = hydrated.q1Summary;
+    discovery.questions = hydrated.questions;
+    discovery.questions.q2.selectedTagIds = [discovery.questions.q2.tags[0].id];
+    discovery.questions.q3.selectedTagIds = discovery.questions.q3.tags.slice(0, 2).map((t) => t.id);
+    discovery.questions.q4.selectedTagIds = [discovery.questions.q4.tags[0].id];
+    discovery.questions.q5.selectedTagIds = [discovery.questions.q5.tags[0].id];
+    discovery.businessContext = {
+      successMetrics: 'Konversi booking >= 12%; pembayaran DP selesai <= 2 menit',
+      userRolesAndRules: 'Pengunjung Publik vs Admin Studio; reschedule maksimal H-2',
+      nonGoals: 'Belum membuat aplikasi mobile native di fase v1',
+      technicalConstraints: 'Mobile viewport 375px, SEO Open Graph, LCP <= 2.5 detik',
+    };
+
+    const workspace = buildWorkspaceStateFromOutput(
+      discovery,
+      buildWorkspaceFallback(discovery),
+      'smart-fallback'
+    );
+    const md = compilePrdMarkdown(workspace);
+
+    expect(md).toContain('Konversi booking >= 12%');
+    expect(md).toContain('pembayaran DP selesai <= 2 menit');
+    expect(md).toContain('Peran Aktor & Aturan Bisnis:** Pengunjung Publik vs Admin Studio');
+    expect(md).toContain('Belum membuat aplikasi mobile native di fase v1');
+    expect(md).toContain('LCP <= 2.5 detik');
   });
 });

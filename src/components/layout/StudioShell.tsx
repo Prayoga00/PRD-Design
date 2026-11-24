@@ -17,6 +17,7 @@ import {
   Network,
   Search,
   Settings,
+  ShieldCheck,
   Sparkles,
   Trash2,
   User,
@@ -38,9 +39,11 @@ import {
   updateStudioStore,
 } from '@/lib/storage/studio-store';
 import { PRD_PURPOSE_MAP, PRD_PURPOSE_OPTIONS } from '@/lib/constants/prd-purposes';
-import type { AiSettings } from '@/lib/types/prdin';
+import type { AiSettings, PrdPurpose } from '@/lib/types/prdin';
+import { PrdinLogoMark, PrdinLogoWordmark } from '@/components/ui/PrdinLogo';
 import { ApiSettingsModal } from '@/components/workspace/ApiSettingsModal';
 import { PrdDownloadModal } from '@/components/workspace/PrdDownloadModal';
+import { PrdValidationModal } from '@/components/workspace/PrdValidationModal';
 
 export interface SegmentedTabItem {
   id: string;
@@ -108,6 +111,7 @@ export function StudioShell({
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [downloadOpen, setDownloadOpen] = useState(false);
+  const [validationOpen, setValidationOpen] = useState(false);
 
   const searchContainerRef = useRef<HTMLDivElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
@@ -253,20 +257,14 @@ export function StudioShell({
         className="hidden lg:flex lg:sticky lg:top-0 lg:h-dvh lg:w-[max(48px,calc(48*var(--u)))] lg:shrink-0 lg:flex-col lg:items-center lg:justify-between lg:border-r lg:border-white/[0.07] lg:bg-[#0E0E0E]/95 lg:py-3.5"
       >
         <div className="flex flex-col items-center gap-4">
-          {/* White Logo Tile */}
+          {/* Official PRDin Logo Tile */}
           <Link
             href="/"
             title="PRDin — Studio PRD Visual"
             aria-label="PRDin Beranda"
-            className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-white text-[#0E0E0E] shadow-sm transition-transform hover:scale-105 focus-visible:outline-2 focus-visible:outline-[#2F6BFF] focus-visible:outline-offset-2"
+            className="flex h-8 w-8 items-center justify-center rounded-[10px] border border-white/[0.14] bg-[#15151A] shadow-[0_0_16px_-6px_rgba(64,77,209,0.85)] transition-all hover:scale-105 hover:border-[#404DD1]/65 hover:bg-[#1B1B22] focus-visible:outline-2 focus-visible:outline-[#2F6BFF] focus-visible:outline-offset-2"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path
-                d="M6 4h7.5a5.5 5.5 0 0 1 0 11H10v5H6V4Zm4 3.5v4h3.5a2 2 0 1 0 0-4H10Z"
-                fill="currentColor"
-              />
-              <circle cx="17.5" cy="17.5" r="2.5" fill="#2F6BFF" />
-            </svg>
+            <PrdinLogoMark className="h-[20px] w-auto" decorative />
           </Link>
 
           {/* Group 1: Core Studio Pages */}
@@ -301,6 +299,21 @@ export function StudioShell({
               className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.06] bg-[#151517] text-[#8C8C8C] transition-colors hover:border-white/15 hover:bg-[#1D1D21] hover:text-white"
             >
               <FolderClock className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (studio.workspace) {
+                  setValidationOpen(true);
+                } else {
+                  router.push('/?tab=standards');
+                }
+              }}
+              title="Validasi Standar PRD"
+              aria-label="Validasi Standar PRD"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.06] bg-[#151517] text-[#8C8C8C] transition-colors hover:border-white/15 hover:bg-[#1D1D21] hover:text-white"
+            >
+              <ShieldCheck className="h-4 w-4" />
             </button>
             <button
               type="button"
@@ -360,14 +373,14 @@ export function StudioShell({
           ref={topBarRef}
           className="relative z-20 flex flex-wrap items-center justify-between gap-2.5 px-4 pt-3.5 pb-2 sm:px-6"
         >
-          {/* Left: Back Tile + Forward Arrow + Breadcrumbs */}
+          {/* Left: Brand Logo + Back Tile + Forward Arrow + Breadcrumbs */}
           <div className="flex min-w-0 items-center gap-2">
             <Link
               href="/"
               aria-label="PRDin Beranda"
-              className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-[#0E0E0E] lg:hidden"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.14] bg-[#15151A] shadow-[0_0_14px_-6px_rgba(64,77,209,0.75)] transition-colors hover:border-[#404DD1]/65 sm:hidden"
             >
-              <span className="text-xs font-semibold">P</span>
+              <PrdinLogoMark className="h-[19px] w-auto" decorative />
             </Link>
 
             <button
@@ -389,6 +402,20 @@ export function StudioShell({
             >
               <ArrowRight className="h-3.5 w-3.5" />
             </button>
+
+            <Link
+              href="/"
+              title="PRDin — Studio PRD Visual"
+              aria-label="PRDin — Halaman Utama"
+              className="hidden shrink-0 items-center rounded-lg px-1 py-0.5 transition-opacity hover:opacity-90 sm:inline-flex focus-visible:outline-2 focus-visible:outline-[#2F6BFF] focus-visible:outline-offset-2"
+            >
+              <PrdinLogoWordmark className="h-[22px] w-auto" decorative />
+            </Link>
+
+            <span
+              aria-hidden="true"
+              className="hidden h-4 w-px shrink-0 bg-white/[0.1] sm:inline-block"
+            />
 
             <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-1.5 text-xs">
               {breadcrumbs.map((crumb, idx) => {
@@ -878,13 +905,55 @@ export function StudioShell({
         onClose={() => setSettingsOpen(false)}
       />
 
-      {/* Global PRD Export Modal when workspace exists */}
+      {/* Global PRD Export & Validation Modals when workspace exists */}
       {studio.workspace && (
-        <PrdDownloadModal
-          open={downloadOpen}
-          workspace={studio.workspace}
-          onClose={() => setDownloadOpen(false)}
-        />
+        <>
+          <PrdDownloadModal
+            open={downloadOpen}
+            workspace={studio.workspace}
+            onClose={() => setDownloadOpen(false)}
+            onOpenValidation={() => setValidationOpen(true)}
+          />
+          <PrdValidationModal
+            open={validationOpen}
+            workspace={studio.workspace}
+            onClose={() => setValidationOpen(false)}
+            onFocusNode={(nodeId) => {
+              updateStudioStore((prev) =>
+                prev.workspace
+                  ? { ...prev, workspace: { ...prev.workspace, selectedNodeId: nodeId } }
+                  : prev
+              );
+              router.push('/workspace');
+            }}
+            onChangeWorkspacePurpose={(nextPurpose: PrdPurpose) => {
+              updateStudioStore((prev) => {
+                if (!prev.workspace) return prev;
+                return {
+                  ...prev,
+                  discovery: {
+                    ...prev.discovery,
+                    prdPurpose: nextPurpose,
+                    q1Summary: prev.discovery.q1Summary
+                      ? { ...prev.discovery.q1Summary, prdPurpose: nextPurpose }
+                      : null,
+                  },
+                  workspace: {
+                    ...prev.workspace,
+                    discovery: {
+                      ...prev.workspace.discovery,
+                      prdPurpose: nextPurpose,
+                      q1Summary: prev.workspace.discovery.q1Summary
+                        ? { ...prev.workspace.discovery.q1Summary, prdPurpose: nextPurpose }
+                        : null,
+                    },
+                  },
+                };
+              });
+            }}
+            onOpenDownload={() => setDownloadOpen(true)}
+          />
+        </>
       )}
     </div>
   );

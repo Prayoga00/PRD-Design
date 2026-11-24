@@ -32,6 +32,13 @@ export const AdaptiveQuestionConfigSchema = z.object({
   selectedTagIds: z.array(z.string()).default([]),
 });
 
+export const PrdBusinessContextSchema = z.object({
+  successMetrics: z.string().max(600).default(''),
+  userRolesAndRules: z.string().max(600).default(''),
+  nonGoals: z.string().max(600).default(''),
+  technicalConstraints: z.string().max(600).default(''),
+});
+
 export const Q1ExtractedSummarySchema = z.object({
   prdPurpose: PrdPurposeSchema.default('website'),
   archetype: ProductArchetypeSchema,

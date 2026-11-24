@@ -7,11 +7,14 @@ import type {
   AdaptiveQuestionConfig,
   AdaptiveQuestionId,
   DiscoveryState,
+  PrdBusinessContext,
   PrdPurpose,
 } from '@/lib/types/prdin';
 import { QuestionOneChat } from './QuestionOneChat';
 import { AdaptiveTagStep } from './AdaptiveTagStep';
+import { BusinessContextStep } from './BusinessContextStep';
 import { StudioShell } from '@/components/layout/StudioShell';
+import { validateDiscoveryReadiness } from '@/lib/validation/prd-validator';
 
 interface DiscoveryWizardProps {
   discovery: DiscoveryState;
@@ -27,6 +30,9 @@ interface DiscoveryWizardProps {
   onClearAllTags: (questionId: AdaptiveQuestionId) => void;
   onAddCustomTag: (questionId: AdaptiveQuestionId, label: string) => boolean;
   onRemoveCustomTag: (questionId: AdaptiveQuestionId, tagId: string) => void;
+  onChangeBusinessContext: (next: PrdBusinessContext) => void;
+  onApplyBusinessPreset: () => void;
+  onClearBusinessContext: () => void;
   onGenerateWorkspace: () => Promise<void>;
   onOpenApiSettings: () => void;
   onResetDiscovery: () => void;
@@ -46,6 +52,9 @@ export function DiscoveryWizard({
   onClearAllTags,
   onAddCustomTag,
   onRemoveCustomTag,
+  onChangeBusinessContext,
+  onApplyBusinessPreset,
+  onClearBusinessContext,
   onGenerateWorkspace,
   onOpenApiSettings,
   onResetDiscovery,
@@ -61,6 +70,8 @@ export function DiscoveryWizard({
 
   const allCompleted = q1Done && qCompletion.every(Boolean);
   const completedCount = (q1Done ? 1 : 0) + qCompletion.filter(Boolean).length;
+  const discoveryValidation = validateDiscoveryReadiness(discovery);
+  const q3Advice = discoveryValidation.checks.find((c) => c.id === 'disc-q3');
 
   return (
     <StudioShell
@@ -144,6 +155,22 @@ export function DiscoveryWizard({
             />
           ))}
 
+          {/* Optional Business & PRD Standard Context */}
+          <BusinessContextStep
+            prdPurpose={discovery.prdPurpose ?? 'website'}
+            value={
+              discovery.businessContext ?? {
+                successMetrics: '',
+                userRolesAndRules: '',
+                nonGoals: '',
+                technicalConstraints: '',
+              }
+            }
+            onChange={onChangeBusinessContext}
+            onApplyPreset={onApplyBusinessPreset}
+            onClear={onClearBusinessContext}
+          />
+
           {/* Action Card */}
           <div className="rounded-2xl border border-white/[0.08] bg-[#151518] p-5">
             <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
@@ -171,9 +198,25 @@ export function DiscoveryWizard({
                 </div>
                 <p className="mt-2 text-xs text-[#8C8C8C]">
                   {allCompleted
-                    ? 'Semua 5 pertanyaan siap! Klik tombol di samping untuk menyusun Plan Text, Canvas interaktif, dan Roadmap proyekmu.'
+                    ? `Semua 5 pertanyaan siap untuk mode ${discoveryValidation.purposeLabel}! Klik tombol di samping untuk menyusun Plan Text, Canvas interaktif, dan Roadmap proyekmu.`
                     : 'Kirim cerita di Q1 lalu pilih minimal 1 tag di setiap pertanyaan Q2–Q5 (bebas memilih sebanyak apa pun).'}
                 </p>
+                <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[11px]">
+                  <span
+                    className={`rounded-full border px-2 py-0.5 font-medium ${
+                      discoveryValidation.businessScore === 100
+                        ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
+                        : 'border-white/[0.08] bg-[#1B1B20] text-[#8C8C8C]'
+                    }`}
+                  >
+                    Standar Bisnis &amp; PRD: {discoveryValidation.businessScore}%
+                  </span>
+                  {q1Done && q3Advice && !q3Advice.passed && (
+                    <span className="text-amber-300/90">
+                      Tip {discoveryValidation.purposeLabel}: {q3Advice.message}
+                    </span>
+                  )}
+                </div>
               </div>
 
               <button

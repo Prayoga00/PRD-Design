@@ -9,6 +9,7 @@ import {
   Kanban,
   Layers,
   Plus,
+  ShieldCheck,
   Trash2,
 } from 'lucide-react';
 import type {
@@ -19,6 +20,7 @@ import type {
   RoadmapTask,
   TaskPriority,
 } from '@/lib/types/prdin';
+import type { PrdValidationResult } from '@/lib/validation/prd-validator';
 import {
   ROADMAP_COLUMN_MAP,
   ROADMAP_COLUMNS,
@@ -31,6 +33,7 @@ interface PlanTextPanelProps {
   nodes: PrdinNode[];
   roadmapTasks: RoadmapTask[];
   selectedNodeId: string | null;
+  validation?: PrdValidationResult | null;
   onSelectNodeFromPlan: (nodeId: string) => void;
   onUpdateSectionContent: (sectionId: string, nextContent: string) => void;
   onAddTask: (input: {
@@ -43,6 +46,7 @@ interface PlanTextPanelProps {
   onMoveTask: (taskId: string, nextStatus: RoadmapStatus) => void;
   onDeleteTask: (taskId: string) => void;
   onOpenRoadmapDetail: () => void;
+  onOpenValidation?: () => void;
 }
 
 type PlanTabId = 'all' | PlanCategory | 'roadmap';
@@ -60,12 +64,14 @@ export function PlanTextPanel({
   nodes,
   roadmapTasks,
   selectedNodeId,
+  validation,
   onSelectNodeFromPlan,
   onUpdateSectionContent,
   onAddTask,
   onMoveTask,
   onDeleteTask,
   onOpenRoadmapDetail,
+  onOpenValidation,
 }: PlanTextPanelProps) {
   const [activeFilter, setActiveFilter] = useState<PlanTabId>('all');
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -116,6 +122,44 @@ export function PlanTextPanel({
         <p className="mt-1 text-xs text-[#6E6E6E]">
           Detail rencana bisnis, UX research, &amp; daftar task roadmap dari canvas.
         </p>
+
+        {validation && onOpenValidation && (
+          <button
+            type="button"
+            onClick={onOpenValidation}
+            className="mt-2.5 flex w-full flex-col gap-1.5 rounded-xl border border-white/[0.08] bg-[#17171C] px-3 py-2 text-left transition-colors hover:border-[#2F6BFF]/45 hover:bg-[#1B1D26]"
+          >
+            <div className="flex items-center justify-between gap-2 text-[11px]">
+              <span className="inline-flex items-center gap-1.5 font-semibold text-white">
+                <ShieldCheck className="h-3.5 w-3.5 text-[#60A5FA]" />
+                Validasi {validation.purposeLabel}
+              </span>
+              <span
+                className={`font-semibold ${
+                  validation.status === 'ready'
+                    ? 'text-[#7DD3FC]'
+                    : validation.status === 'needs-improvement'
+                    ? 'text-amber-300'
+                    : 'text-rose-300'
+                }`}
+              >
+                {validation.score}/100 · {validation.statusLabel}
+              </span>
+            </div>
+            <progress
+              aria-label={`Skor validasi PRD ${validation.purposeLabel}`}
+              value={validation.score}
+              max={100}
+              className={`h-1.5 w-full ${
+                validation.status === 'ready'
+                  ? 'iris-progress'
+                  : validation.status === 'needs-improvement'
+                  ? 'iris-progress iris-progress-warn'
+                  : 'iris-progress iris-progress-fail'
+              }`}
+            />
+          </button>
+        )}
 
         {/* Filter Chips */}
         <div className="mt-2.5 flex flex-wrap gap-1.5">
@@ -297,7 +341,9 @@ export function PlanTextPanel({
                         ? 'bg-[#38BDF8]/15 text-[#7DD3FC]'
                         : sec.category === 'business-flow'
                           ? 'bg-[#2F6BFF]/20 text-[#93C5FD]'
-                          : 'bg-white/[0.08] text-[#D4D4D8]'
+                          : sec.category === 'specs'
+                            ? 'bg-[#5A4CF5]/20 text-[#C4B5FD]'
+                            : 'bg-white/[0.08] text-[#D4D4D8]'
                         }`}
                     >
                       {sec.category === 'ux-research'
@@ -306,7 +352,9 @@ export function PlanTextPanel({
                           ? 'Flow Kerja Bisnis'
                           : sec.category === 'non-goals'
                             ? 'Scope / Non-Goals'
-                            : 'Ringkasan'}
+                            : sec.category === 'specs'
+                              ? 'Spesifikasi Teknis'
+                              : 'Ringkasan'}
                     </span>
                     <h3 className="mt-1.5 text-xs font-semibold text-white">{sec.title}</h3>
                   </div>

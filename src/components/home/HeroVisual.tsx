@@ -90,9 +90,9 @@ export function HeroVisual() {
           <div className="flex items-center justify-between gap-2">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-[#2F6BFF]/20 px-2.5 py-0.5 text-[11px] font-semibold text-[#93C5FD]">
               <MessageSquareText className="h-3 w-3" />
-              1. Ask PRD (Q1–Q5)
+              1. Ask PRD (Q1–Q5 + Detail Bisnis)
             </span>
-            <span className="text-[10px] font-medium text-[#7DD3FC]">Tag tersinkron</span>
+            <span className="text-[10px] font-medium text-[#7DD3FC]">KPI &amp; Tag sinkron</span>
           </div>
           <p className="mt-2 text-xs text-[#D4D4D8]">
             &ldquo;Bikin alur checkout aplikasi UMKM agar pembeli cepat bayar tanpa bingung.&rdquo;
@@ -166,10 +166,10 @@ export function HeroVisual() {
           <div className="min-w-0">
             <div className="flex items-center gap-1.5 text-[11px] font-semibold text-[#93C5FD]">
               <FileCode2 className="h-3.5 w-3.5" />
-              3. PRD + Mermaid Siap Unduh
+              3. Validasi PRD &amp; Ekspor Mermaid
             </div>
             <p className="mt-0.5 truncate font-mono text-[11px] text-[#8C8C8C]">
-              prdin-alur-checkout.md · flowchart LR
+              Skor 100/100 · prdin-alur-checkout.md
             </p>
           </div>
           <span className="iris-btn-gradient shrink-0 rounded-lg px-2.5 py-1 text-[11px] font-semibold">

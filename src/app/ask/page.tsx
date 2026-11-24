@@ -2,8 +2,17 @@
 
 import React, { Suspense, useEffect, useState, useSyncExternalStore } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import type { AdaptiveQuestionId, AiSettings, PrdPurpose } from '@/lib/types/prdin';
-import { createInitialDiscoveryState } from '@/lib/engine/smart-fallback';
+import type {
+  AdaptiveQuestionId,
+  AiSettings,
+  PrdBusinessContext,
+  PrdPurpose,
+} from '@/lib/types/prdin';
+import { PRD_PURPOSE_MAP } from '@/lib/constants/prd-purposes';
+import {
+  createEmptyBusinessContext,
+  createInitialDiscoveryState,
+} from '@/lib/engine/smart-fallback';
 import {
   generateWorkspaceClient,
   hydrateQuestionsClient,
@@ -286,6 +295,39 @@ function AskPrdContent() {
     });
   };
 
+  const handleChangeBusinessContext = (next: PrdBusinessContext) => {
+    updateStudioStore((prev) => ({
+      ...prev,
+      discovery: {
+        ...prev.discovery,
+        businessContext: next,
+      },
+    }));
+  };
+
+  const handleApplyBusinessPreset = () => {
+    updateStudioStore((prev) => {
+      const purpose = prev.discovery.prdPurpose ?? 'website';
+      return {
+        ...prev,
+        discovery: {
+          ...prev.discovery,
+          businessContext: { ...PRD_PURPOSE_MAP[purpose].businessPresets.defaultPreset },
+        },
+      };
+    });
+  };
+
+  const handleClearBusinessContext = () => {
+    updateStudioStore((prev) => ({
+      ...prev,
+      discovery: {
+        ...prev.discovery,
+        businessContext: createEmptyBusinessContext(),
+      },
+    }));
+  };
+
   const handleGenerateWorkspace = async () => {
     setGenerateError(null);
     setIsGeneratingWorkspace(true);
@@ -338,6 +380,9 @@ function AskPrdContent() {
         onClearAllTags={handleClearAllTags}
         onAddCustomTag={handleAddCustomTag}
         onRemoveCustomTag={handleRemoveCustomTag}
+        onChangeBusinessContext={handleChangeBusinessContext}
+        onApplyBusinessPreset={handleApplyBusinessPreset}
+        onClearBusinessContext={handleClearBusinessContext}
         onGenerateWorkspace={handleGenerateWorkspace}
         onOpenApiSettings={() => setIsSettingsOpen(true)}
         onResetDiscovery={handleReset}

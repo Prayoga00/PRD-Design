@@ -35,11 +35,11 @@ const STEPS: WalkthroughStep[] = [
   },
   {
     id: 1,
-    shortTitle: '2. Tag Adaptif Q2–Q5',
-    badge: 'Langkah 2 · Hydrate Tag',
-    title: 'Pilihan tag di Pertanyaan 2–5 otomatis menyesuaikan cerita',
+    shortTitle: '2. Tag Q2–Q5 & Detail Bisnis',
+    badge: 'Langkah 2 · Hydrate Tag & KPI',
+    title: 'Pilih tag adaptif tanpa batas + lengkapi KPI, Role & Non-Goals',
     description:
-      'Tinggal klik tag relevan (plus tombol Other untuk input manual) agar langkah awal, 3 fitur wajib, value hook, dan retensi terkunci rapi.',
+      'Klik sebanyak apa pun tag relevan di Q2–Q5, lalu isi opsional Detail Bisnis (target KPI terukur, hak akses role, Non-Goals, & NFR) dengan preset 1-klik.',
   },
   {
     id: 2,
@@ -51,11 +51,11 @@ const STEPS: WalkthroughStep[] = [
   },
   {
     id: 3,
-    shortTitle: '4. Download PRD (.md)',
+    shortTitle: '4. Validasi PRD & Ekspor',
     badge: 'Langkah 4 · Siap Eksekusi',
-    title: 'Ekspor dokumen PRD utuh lengkap dengan diagram Mermaid',
+    title: 'Cek skor kelayakan per tujuan lalu unduh PRD (.md) + Mermaid',
     description:
-      'Unduh spesifikasi terstruktur yang siap dibagikan ke developer, klien, atau AI coding assistant dalam format Markdown.',
+      'Validasi PRD memeriksa kelengkapan khusus UI/UX Proses, Website, atau Aplikasi beserta tombol perbaikan otomatis sebelum diunduh dalam format Markdown.',
   },
 ];
 
@@ -218,10 +218,10 @@ export function StepByStepShowcase() {
               <div className="flex items-center justify-between text-xs">
                 <span className="inline-flex items-center gap-1.5 font-semibold text-white">
                   <Tag className="h-3.5 w-3.5 text-[#2F6BFF]" />
-                  Pertanyaan 3 · 3 Artefak UI/UX Wajib
+                  Pertanyaan 3 &amp; Detail Bisnis Standar PRD
                 </span>
                 <span className="rounded-full bg-[#2F6BFF]/20 px-2 py-0.5 text-[11px] font-semibold text-[#93C5FD]">
-                  3/3 dipilih
+                  Bebas pilih · KPI siap
                 </span>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -294,7 +294,7 @@ export function StepByStepShowcase() {
                 <div className="text-[#93C5FD]">  ux_persona --&gt; flow_entry --&gt; flow_feat_1</div>
               </div>
               <div className="flex items-center justify-between rounded-xl border border-[#2F6BFF]/35 bg-[#2F6BFF]/15 px-3 py-2 text-xs font-semibold text-[#93C5FD]">
-                <span>File prdin-alur-checkout.md siap unduh</span>
+                <span>Validasi 100/100 · prdin-alur-checkout.md siap unduh</span>
                 <Download className="h-4 w-4" />
               </div>
             </div>

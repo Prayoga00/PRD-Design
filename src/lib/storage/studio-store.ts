@@ -106,6 +106,12 @@ function readInitialClientSnapshot(): StudioStoreSnapshot {
           ...parsed.discovery,
           prdPurpose: parsed.discovery.prdPurpose ?? 'website',
           questions: upgradedQuestions,
+          businessContext: parsed.discovery.businessContext ?? {
+            successMetrics: '',
+            userRolesAndRules: '',
+            nonGoals: '',
+            technicalConstraints: '',
+          },
         };
       }
       if (parsed.workspace) {

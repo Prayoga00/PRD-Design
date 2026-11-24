@@ -57,11 +57,19 @@ export interface Q1ExtractedSummary {
   valueContext: string;
 }
 
+export interface PrdBusinessContext {
+  successMetrics: string;
+  userRolesAndRules: string;
+  nonGoals: string;
+  technicalConstraints: string;
+}
+
 export interface DiscoveryState {
   prdPurpose: PrdPurpose;
   q1Messages: Q1Message[];
   q1Summary: Q1ExtractedSummary | null;
   questions: Record<AdaptiveQuestionId, AdaptiveQuestionConfig>;
+  businessContext?: PrdBusinessContext;
 }
 
 export type CanvasNodeKind =

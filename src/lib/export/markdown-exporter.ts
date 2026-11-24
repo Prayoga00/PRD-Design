@@ -1,6 +1,7 @@
 import type { PrdinEdge, PrdinNode, WorkspaceState } from '@/lib/types/prdin';
 import { PRD_PURPOSE_MAP } from '@/lib/constants/prd-purposes';
 import { ROADMAP_COLUMNS } from '@/lib/engine/roadmap-defaults';
+import { validateWorkspacePrd } from '@/lib/validation/prd-validator';
 
 export function slugifyFilename(title: string): string {
   const cleaned = title
@@ -104,6 +105,11 @@ export function compilePrdMarkdown(workspace: WorkspaceState): string {
 
   const flowNodes = nodes.filter((n) => n.data.zone === 'business-flow');
   const mermaidBlock = buildMermaidFlowchart(nodes, edges);
+  const biz = discovery.businessContext;
+  const customKpis = biz?.successMetrics
+    ?.split(/[;\n]+/)
+    .map((item) => item.trim().replace(/^[-*]\s*/, ''))
+    .filter(Boolean);
 
   const lines: string[] = [
     `# PRD: ${projectTitle}`,
@@ -117,9 +123,13 @@ export function compilePrdMarkdown(workspace: WorkspaceState): string {
     `- **Problem Statement:** ${q1?.painPoint ?? 'Pengguna membutuhkan alur digital yang lebih terstruktur untuk mencapai tujuannya.'}`,
     `- **Proposed Solution:** ${q1?.coreGoal ?? projectTitle} yang berfokus pada ${q3Labels.join(', ') || 'fitur inti produk'}.`,
     `- **Success Criteria:**`,
-    `  - Pengguna baru menyelesaikan langkah awal (${q2Labels[0] ?? 'onboarding'}) dalam <= 3 menit.`,
-    `  - Tingkat adopsi pemicu nilai utama (${q4Labels.join(', ') || 'core value'}) mencapai >= 60% pada pengguna aktif mingguan.`,
-    `  - Tingkat retensi kembali melalui mekanisme (${q5Labels.join(', ') || 'retention loop'}) mencapai >= 35% dalam 30 hari.`,
+    ...(customKpis && customKpis.length > 0
+      ? customKpis.map((kpi) => `  - ${kpi}`)
+      : [
+          `  - Pengguna baru menyelesaikan langkah awal (${q2Labels[0] ?? 'onboarding'}) dalam <= 3 menit.`,
+          `  - Tingkat adopsi pemicu nilai utama (${q4Labels.join(', ') || 'core value'}) mencapai >= 60% pada pengguna aktif mingguan.`,
+          `  - Tingkat retensi kembali melalui mekanisme (${q5Labels.join(', ') || 'retention loop'}) mencapai >= 35% dalam 30 hari.`,
+        ]),
   ];
 
   for (const sec of summarySections) {
@@ -139,6 +149,10 @@ export function compilePrdMarkdown(workspace: WorkspaceState): string {
     `- **Alasan Pengguna Mau Memakai (Q4 - Adoption Hook):** ${q4Labels.join(', ') || '-'}`,
     `- **Alasan Pengguna Kembali Lagi (Q5 - Retention Loop):** ${q5Labels.join(', ') || '-'}`
   );
+
+  if (biz?.userRolesAndRules?.trim()) {
+    lines.push(`- **Peran Aktor & Aturan Bisnis:** ${biz.userRolesAndRules.trim()}`);
+  }
 
   for (const sec of uxSections) {
     lines.push('', `### ${sec.title}`, '', sec.content);
@@ -187,6 +201,13 @@ export function compilePrdMarkdown(workspace: WorkspaceState): string {
     for (const sec of specSections) {
       lines.push(`#### ${sec.title}`, '', sec.content, '');
     }
+  } else if (biz?.technicalConstraints?.trim()) {
+    lines.push(
+      '### Catatan Spesifikasi & Batasan Teknis',
+      '',
+      biz.technicalConstraints.trim(),
+      ''
+    );
   }
 
   lines.push('---', '', '## 5. Non-Goals, Risks & Next Steps', '');
@@ -197,7 +218,7 @@ export function compilePrdMarkdown(workspace: WorkspaceState): string {
     }
   } else {
     lines.push(
-      '- **Non-Goals MVP:** Fitur sekunder di luar 3 fitur wajib awal ditunda ke rilis berikutnya agar fokus pada validasi alur utama.',
+      `- **Non-Goals MVP:** ${biz?.nonGoals?.trim() || 'Fitur sekunder di luar prioritas wajib awal ditunda ke rilis berikutnya agar fokus pada validasi alur utama.'}`,
       '- **Technical Risks:** Validasi performa antarmuka pada perangkat mobile dan kejelasan error state saat pengguna awam melakukan kesalahan input.',
       ''
     );
@@ -226,6 +247,37 @@ export function compilePrdMarkdown(workspace: WorkspaceState): string {
       }
     }
   }
+
+  const validation = validateWorkspacePrd(workspace);
+  lines.push(
+    '---',
+    '',
+    `## 7. Hasil Validasi PRD (${purposeLabel})`,
+    '',
+    `- **Skor Kelayakan PRD:** ${validation.score}/100 (**${validation.statusLabel}**)`,
+    `- **Ringkasan Pemeriksaan:** ${validation.summary.passed} lolos · ${validation.summary.warnings} saran · ${validation.summary.failed} perlu perbaikan`,
+    '',
+    '| Status | Kategori | Kriteria Validasi | Catatan |',
+    '| :--- | :--- | :--- | :--- |'
+  );
+
+  for (const check of validation.checks) {
+    const statusTag =
+      check.status === 'pass' ? '[PASS]' : check.status === 'warning' ? '[WARN]' : '[FAIL]';
+    const safeCat = escapeMermaidLabel(check.categoryLabel);
+    const safeTitle = escapeMermaidLabel(check.title);
+    const safeMsg = escapeMermaidLabel(check.message);
+    lines.push(`| \`${statusTag}\` | ${safeCat} | ${safeTitle} | ${safeMsg} |`);
+  }
+
+  if (validation.recommendations.length > 0) {
+    lines.push('', '### Rekomendasi Penyempurnaan', '');
+    for (const rec of validation.recommendations) {
+      lines.push(`- ${rec}`);
+    }
+  }
+
+  lines.push('');
 
   return lines.join('\n');
 }
