@@ -76,24 +76,26 @@ function resolveSemanticEdgeStyle(
   const label = edge.label ?? '';
   const isUxLink = edge.source.startsWith('ux-') || srcNode?.data.zone === 'ux-research';
   const isBranchRevisi =
-    /tidak|revisi|gagal|batal/i.test(label) || edge.target.includes('recovery');
+    !isUxLink &&
+    (/tidak|revisi|gagal|batal/i.test(label) || edge.target.includes('recovery'));
   const isLoopback =
-    /ulangi|perbaiki|kembali|loop|retry/i.test(label) || edge.source.includes('recovery');
-  const isYesBranch = /\bya\b|valid|lolos|sukses/i.test(label);
+    !isUxLink &&
+    (/ulangi|perbaiki|kembali|loop|retry/i.test(label) || edge.source.includes('recovery'));
+  const isYesBranch = !isUxLink && /\bya\b|valid|lolos|sukses/i.test(label);
 
   let sourceHandle = edge.sourceHandle;
   let targetHandle = edge.targetHandle;
 
   // Pick orthogonal exit/entry handles matching active TB/LR flowchart direction
   if (srcNode && tgtNode && !edge.id.startsWith('e-manual-')) {
-    if (isLoopback) {
+    if (isUxLink) {
+      sourceHandle = direction === 'TB' ? 's-right' : 'bottom';
+      targetHandle = direction === 'TB' ? 'left' : 'top';
+    } else if (isLoopback) {
       sourceHandle = direction === 'TB' ? 's-top' : 's-left';
       targetHandle = direction === 'TB' ? 't-right' : 't-bottom';
     } else if (isBranchRevisi) {
       sourceHandle = direction === 'TB' ? 'right' : 'bottom';
-      targetHandle = direction === 'TB' ? 'left' : 'top';
-    } else if (isUxLink) {
-      sourceHandle = direction === 'TB' ? 's-right' : 'bottom';
       targetHandle = direction === 'TB' ? 'left' : 'top';
     } else {
       const dx = tgtNode.position.x - srcNode.position.x;
@@ -119,7 +121,7 @@ function resolveSemanticEdgeStyle(
   let animated = Boolean(edge.animated) && !prefersReducedMotion;
 
   if (isUxLink) {
-    stroke = 'rgba(56, 189, 248, 0.5)';
+    stroke = 'rgba(56, 189, 248, 0.52)';
     strokeWidth = 1.5;
     strokeDasharray = '4 4';
     badgeFill = '#111622';
@@ -199,19 +201,18 @@ function CanvasInner({
   const canvasRegionId = useId();
   const toolbarRef = useRef<HTMLDivElement>(null);
 
-  const [showMiniMap, setShowMiniMap] = useState(!readOnlyPreview);
+  // Minimap off by default so bottom-right decision branch nodes stay 100% unobstructed
+  const [showMiniMap, setShowMiniMap] = useState(false);
   const [showUxLayer, setShowUxLayer] = useState(true);
   const [showLegend, setShowLegend] = useState(false);
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState('');
-  const prevNodeCountRef = useRef(nodes.length);
 
-  // Refit smoothly when node count or layout direction changes
+  // Refit smoothly when node count, orientation, or layer filter changes
   useEffect(() => {
     const timer = setTimeout(() => {
-      fitView({ padding: 0.16, duration: prefersReducedMotion ? 0 : 260 });
+      fitView({ padding: 0.14, duration: prefersReducedMotion ? 0 : 240 });
     }, 60);
-    prevNodeCountRef.current = nodes.length;
     return () => clearTimeout(timer);
   }, [nodes.length, direction, showUxLayer, fitView, prefersReducedMotion]);
 
@@ -400,24 +401,28 @@ function CanvasInner({
       id={canvasRegionId}
       role="region"
       aria-label="Flowchart Canvas Interaktif PRDin"
-      className="relative h-full w-full bg-[#0E0E0E]"
+      className="flex h-full w-full flex-col bg-[#0E0E0E]"
     >
-      {/* Top Accessible Canvas Toolbar */}
+      {/* Docked Accessible Flowchart Toolbar above viewport (zero overlap with nodes) */}
       <div
         ref={toolbarRef}
         role="toolbar"
         {...({ focusgroup: 'toolbar wrap' } as Record<string, string>)}
         aria-label="Kontrol Flowchart Canvas"
         aria-controls={canvasRegionId}
-        className="pointer-events-none absolute top-3 right-3 left-3 z-10 flex flex-wrap items-center justify-between gap-2"
+        className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-white/[0.08] bg-[#121216] px-3 py-2"
       >
-        {/* Left: Flowchart Title + Orientation & Layer Controls */}
-        <div className="iris-glass pointer-events-auto flex flex-wrap items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs">
+        {/* Left: Title + Orientation + Layers */}
+        <div className="flex flex-wrap items-center gap-1.5 text-xs">
           <span className="font-semibold text-white">Flowchart Canvas</span>
 
-          <span role="separator" aria-orientation="vertical" className="mx-0.5 h-3.5 w-px bg-white/[0.12]" />
+          <span
+            role="separator"
+            aria-orientation="vertical"
+            className="mx-0.5 hidden h-3.5 w-px bg-white/[0.12] sm:inline-block"
+          />
 
-          <div role="group" aria-label="Orientasi Flowchart" className="flex items-center gap-1">
+          <div role="group" aria-label="Orientasi Flowchart" className="flex flex-wrap items-center gap-1">
             {onChangeDirection && (
               <>
                 <button
@@ -473,7 +478,11 @@ function CanvasInner({
             )}
           </div>
 
-          <span role="separator" aria-orientation="vertical" className="mx-0.5 h-3.5 w-px bg-white/[0.12]" />
+          <span
+            role="separator"
+            aria-orientation="vertical"
+            className="mx-0.5 hidden h-3.5 w-px bg-white/[0.12] sm:inline-block"
+          />
 
           <div role="group" aria-label="Filter Layer dan Simbol" className="flex items-center gap-1">
             <button
@@ -517,13 +526,13 @@ function CanvasInner({
         </div>
 
         {/* Right: Node Editing + Zoom Controls */}
-        <div className="iris-glass pointer-events-auto flex flex-wrap items-center gap-1 rounded-xl p-1">
+        <div className="flex flex-wrap items-center gap-1">
           {!readOnlyPreview && onQuickAddNode && (
             <div role="group" aria-label="Tambah atau hapus node" className="flex items-center gap-1">
               <button
                 type="button"
                 onClick={() => onQuickAddNode('business-flow')}
-                className="inline-flex min-h-[26px] items-center gap-1 rounded-lg bg-[#2F6BFF]/20 px-2.5 py-1 text-xs font-semibold text-[#93C5FD] transition-colors hover:bg-[#2F6BFF]/30 hover:text-white focus-visible:outline-2 focus-visible:outline-[#2F6BFF] focus-visible:outline-offset-2"
+                className="inline-flex min-h-[26px] items-center gap-1 rounded-lg bg-[#2F6BFF]/20 px-2 py-1 text-[11px] font-semibold text-[#93C5FD] transition-colors hover:bg-[#2F6BFF]/30 hover:text-white focus-visible:outline-2 focus-visible:outline-[#2F6BFF] focus-visible:outline-offset-2"
                 title="Tambah langkah flowchart baru"
               >
                 <Plus className="h-3.5 w-3.5" aria-hidden="true" />
@@ -532,7 +541,7 @@ function CanvasInner({
               <button
                 type="button"
                 onClick={() => onQuickAddNode('ux-research')}
-                className="inline-flex min-h-[26px] items-center gap-1 rounded-lg bg-[#5A4CF5]/20 px-2.5 py-1 text-xs font-semibold text-[#C4B5FD] transition-colors hover:bg-[#5A4CF5]/30 hover:text-white focus-visible:outline-2 focus-visible:outline-[#2F6BFF] focus-visible:outline-offset-2"
+                className="inline-flex min-h-[26px] items-center gap-1 rounded-lg bg-[#5A4CF5]/20 px-2 py-1 text-[11px] font-semibold text-[#C4B5FD] transition-colors hover:bg-[#5A4CF5]/30 hover:text-white focus-visible:outline-2 focus-visible:outline-[#2F6BFF] focus-visible:outline-offset-2"
                 title="Tambah catatan UX Research di canvas"
               >
                 <Plus className="h-3.5 w-3.5" aria-hidden="true" />
@@ -545,7 +554,7 @@ function CanvasInner({
                   onClick={handleDeleteSelectedEdge}
                   aria-label="Hapus koneksi terpilih"
                   title="Hapus koneksi terpilih"
-                  className="inline-flex min-h-[26px] items-center gap-1 rounded-lg bg-[#5A4CF5]/25 px-2 py-1 text-xs font-medium text-[#DDD6FE] hover:bg-[#5A4CF5]/40 focus-visible:outline-2 focus-visible:outline-[#2F6BFF] focus-visible:outline-offset-2"
+                  className="inline-flex min-h-[26px] items-center gap-1 rounded-lg bg-[#5A4CF5]/25 px-2 py-1 text-[11px] font-medium text-[#DDD6FE] hover:bg-[#5A4CF5]/40 focus-visible:outline-2 focus-visible:outline-[#2F6BFF] focus-visible:outline-offset-2"
                 >
                   <Unlink className="h-3.5 w-3.5" aria-hidden="true" />
                   Hapus Garis
@@ -558,27 +567,31 @@ function CanvasInner({
                   onClick={onDeleteSelectedNode}
                   aria-label="Hapus node terpilih"
                   title="Hapus node terpilih"
-                  className="inline-flex min-h-[26px] min-w-[26px] items-center justify-center rounded-lg p-1.5 text-[#C4B5FD] hover:bg-[#5A4CF5]/25 hover:text-white focus-visible:outline-2 focus-visible:outline-[#2F6BFF] focus-visible:outline-offset-2"
+                  className="inline-flex min-h-[26px] min-w-[26px] items-center justify-center rounded-lg p-1 text-[#C4B5FD] hover:bg-[#5A4CF5]/25 hover:text-white focus-visible:outline-2 focus-visible:outline-[#2F6BFF] focus-visible:outline-offset-2"
                 >
                   <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                 </button>
               )}
 
-              <span role="separator" aria-orientation="vertical" className="mx-0.5 h-4 w-px bg-white/[0.12]" />
+              <span
+                role="separator"
+                aria-orientation="vertical"
+                className="mx-0.5 hidden h-4 w-px bg-white/[0.12] sm:inline-block"
+              />
             </div>
           )}
 
-          <div role="group" aria-label="Zoom dan navigasi canvas" className="flex items-center gap-1">
+          <div role="group" aria-label="Zoom dan navigasi canvas" className="flex items-center gap-0.5">
             <button
               type="button"
               onClick={() => zoomOut({ duration: prefersReducedMotion ? 0 : 180 })}
               aria-label="Zoom out canvas"
               title="Zoom Out"
-              className="inline-flex min-h-[26px] min-w-[26px] items-center justify-center rounded-lg p-1.5 text-[#D4D4D8] hover:bg-white/[0.08] focus-visible:outline-2 focus-visible:outline-[#2F6BFF] focus-visible:outline-offset-2"
+              className="inline-flex min-h-[26px] min-w-[26px] items-center justify-center rounded-lg p-1 text-[#D4D4D8] hover:bg-white/[0.08] focus-visible:outline-2 focus-visible:outline-[#2F6BFF] focus-visible:outline-offset-2"
             >
               <ZoomOut className="h-3.5 w-3.5" aria-hidden="true" />
             </button>
-            <span className="min-w-[40px] text-center font-mono text-[11px] font-medium text-[#8C8C8C]">
+            <span className="min-w-[38px] text-center font-mono text-[11px] font-medium text-[#8C8C8C]">
               {Math.round(zoom * 100)}%
             </span>
             <button
@@ -586,16 +599,16 @@ function CanvasInner({
               onClick={() => zoomIn({ duration: prefersReducedMotion ? 0 : 180 })}
               aria-label="Zoom in canvas"
               title="Zoom In"
-              className="inline-flex min-h-[26px] min-w-[26px] items-center justify-center rounded-lg p-1.5 text-[#D4D4D8] hover:bg-white/[0.08] focus-visible:outline-2 focus-visible:outline-[#2F6BFF] focus-visible:outline-offset-2"
+              className="inline-flex min-h-[26px] min-w-[26px] items-center justify-center rounded-lg p-1 text-[#D4D4D8] hover:bg-white/[0.08] focus-visible:outline-2 focus-visible:outline-[#2F6BFF] focus-visible:outline-offset-2"
             >
               <ZoomIn className="h-3.5 w-3.5" aria-hidden="true" />
             </button>
             <button
               type="button"
-              onClick={() => fitView({ padding: 0.16, duration: prefersReducedMotion ? 0 : 250 })}
+              onClick={() => fitView({ padding: 0.14, duration: prefersReducedMotion ? 0 : 250 })}
               aria-label="Pas-kan semua node di layar"
               title="Fit View"
-              className="inline-flex min-h-[26px] min-w-[26px] items-center justify-center rounded-lg p-1.5 text-[#D4D4D8] hover:bg-white/[0.08] focus-visible:outline-2 focus-visible:outline-[#2F6BFF] focus-visible:outline-offset-2"
+              className="inline-flex min-h-[26px] min-w-[26px] items-center justify-center rounded-lg p-1 text-[#D4D4D8] hover:bg-white/[0.08] focus-visible:outline-2 focus-visible:outline-[#2F6BFF] focus-visible:outline-offset-2"
             >
               <Maximize2 className="h-3.5 w-3.5" aria-hidden="true" />
             </button>
@@ -605,7 +618,7 @@ function CanvasInner({
               onClick={() => setShowMiniMap((prev) => !prev)}
               aria-label="Tampilkan atau sembunyikan minimap"
               title="Toggle Minimap"
-              className={`inline-flex min-h-[26px] min-w-[26px] items-center justify-center rounded-lg p-1.5 focus-visible:outline-2 focus-visible:outline-[#2F6BFF] focus-visible:outline-offset-2 ${
+              className={`inline-flex min-h-[26px] min-w-[26px] items-center justify-center rounded-lg p-1 focus-visible:outline-2 focus-visible:outline-[#2F6BFF] focus-visible:outline-offset-2 ${
                 showMiniMap ? 'bg-white/[0.12] text-white' : 'text-[#8C8C8C] hover:bg-white/[0.08]'
               }`}
             >
@@ -620,84 +633,86 @@ function CanvasInner({
         {statusMessage}
       </p>
 
-      {/* Flowchart Notation Legend Popover Card */}
-      {showLegend && (
-        <div
-          aria-label="Legenda Simbol Flowchart"
-          className="iris-glass absolute bottom-3 left-3 z-10 max-w-xs rounded-xl p-3 text-[11px] shadow-2xl"
-        >
-          <p className="font-semibold text-white">Simbol Flowchart PRDin</p>
-          <ul className="mt-2 space-y-1.5 text-[#D4D4D8]">
-            <li className="flex items-center gap-2">
-              <span className="h-3 w-5 rounded-full border-2 border-[#38BDF8] bg-[#141620]" />
-              <span>Kapsul (Oval) = Mulai (Q2) / Selesai (Q5)</span>
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="h-3 w-5 rounded border border-white/20 border-l-4 border-l-[#2F6BFF] bg-[#16161B]" />
-              <span>Kotak = Proses / Fitur (Q3)</span>
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="inline-block h-3 w-3 rotate-45 border border-[#6366F1] bg-[#151726]" />
-              <span>Belah Ketupat = Keputusan Ya / Tidak (Q4)</span>
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="h-0.5 w-5 border-t-2 border-dashed border-[#818CF8]" />
-              <span>Garis Putus = Cabang Revisi / Loopback</span>
-            </li>
-          </ul>
-        </div>
-      )}
-
-      <ReactFlow
-        className="dark"
-        nodes={rfNodes}
-        edges={rfEdges}
-        nodeTypes={NODE_TYPES}
-        nodesDraggable={!readOnlyPreview}
-        nodesConnectable={!readOnlyPreview}
-        onNodesChange={handleNodesChange}
-        onEdgesChange={handleEdgesChange}
-        onConnect={handleConnect}
-        onNodeClick={(_, node) => {
-          setSelectedEdgeId(null);
-          onSelectNode(node.id);
-        }}
-        onEdgeClick={(_, edge) => {
-          setSelectedEdgeId(edge.id);
-        }}
-        onPaneClick={() => {
-          setSelectedEdgeId(null);
-          onSelectNode(null);
-        }}
-        fitView
-        fitViewOptions={{ padding: 0.16 }}
-        minZoom={0.25}
-        maxZoom={2}
-        proOptions={{ hideAttribution: true }}
-      >
-        <Background
-          bgColor="#0E0E0E"
-          variant={BackgroundVariant.Dots}
-          gap={22}
-          size={1.2}
-          color="#27272A"
-        />
-        {showMiniMap && (
-          <MiniMap
-            pannable
-            zoomable
-            maskColor="rgba(14, 14, 14, 0.72)"
-            className="!rounded-xl !border !border-white/[0.1] !bg-[#151518]/95 !shadow-xl"
-            nodeColor={(n) => {
-              const data = n.data as RfPrdinNode['data'];
-              if (data.zone === 'ux-research') return '#38BDF8';
-              if (data.kind === 'flow-decision') return '#6366F1';
-              if (data.kind === 'flow-outcome') return '#5A4CF5';
-              return '#2F6BFF';
-            }}
-          />
+      {/* Dedicated unobstructed ReactFlow Canvas area */}
+      <div className="relative min-h-0 flex-1">
+        {showLegend && (
+          <div
+            aria-label="Legenda Simbol Flowchart"
+            className="iris-glass absolute bottom-3 left-3 z-10 max-w-xs rounded-xl p-3 text-[11px] shadow-2xl"
+          >
+            <p className="font-semibold text-white">Simbol Flowchart PRDin</p>
+            <ul className="mt-2 space-y-1.5 text-[#D4D4D8]">
+              <li className="flex items-center gap-2">
+                <span className="h-3 w-5 rounded-full border-2 border-[#38BDF8] bg-[#141620]" />
+                <span>Kapsul (Oval) = Mulai (Q2) / Selesai (Q5)</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="h-3 w-5 rounded border border-white/20 border-l-4 border-l-[#2F6BFF] bg-[#16161B]" />
+                <span>Kotak = Proses / Fitur (Q3)</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="inline-block h-3 w-3 rotate-45 border border-[#6366F1] bg-[#151726]" />
+                <span>Belah Ketupat = Keputusan Ya / Tidak (Q4)</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="h-0.5 w-5 border-t-2 border-dashed border-[#818CF8]" />
+                <span>Garis Putus = Cabang Revisi / Loopback</span>
+              </li>
+            </ul>
+          </div>
         )}
-      </ReactFlow>
+
+        <ReactFlow
+          className="dark"
+          nodes={rfNodes}
+          edges={rfEdges}
+          nodeTypes={NODE_TYPES}
+          nodesDraggable={!readOnlyPreview}
+          nodesConnectable={!readOnlyPreview}
+          onNodesChange={handleNodesChange}
+          onEdgesChange={handleEdgesChange}
+          onConnect={handleConnect}
+          onNodeClick={(_, node) => {
+            setSelectedEdgeId(null);
+            onSelectNode(node.id);
+          }}
+          onEdgeClick={(_, edge) => {
+            setSelectedEdgeId(edge.id);
+          }}
+          onPaneClick={() => {
+            setSelectedEdgeId(null);
+            onSelectNode(null);
+          }}
+          fitView
+          fitViewOptions={{ padding: 0.14 }}
+          minZoom={0.25}
+          maxZoom={2}
+          proOptions={{ hideAttribution: true }}
+        >
+          <Background
+            bgColor="#0E0E0E"
+            variant={BackgroundVariant.Dots}
+            gap={22}
+            size={1.2}
+            color="#27272A"
+          />
+          {showMiniMap && (
+            <MiniMap
+              pannable
+              zoomable
+              maskColor="rgba(14, 14, 14, 0.72)"
+              className="!rounded-xl !border !border-white/[0.1] !bg-[#151518]/95 !shadow-xl"
+              nodeColor={(n) => {
+                const data = n.data as RfPrdinNode['data'];
+                if (data.zone === 'ux-research') return '#38BDF8';
+                if (data.kind === 'flow-decision') return '#6366F1';
+                if (data.kind === 'flow-outcome') return '#5A4CF5';
+                return '#2F6BFF';
+              }}
+            />
+          )}
+        </ReactFlow>
+      </div>
     </div>
   );
 }

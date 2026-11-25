@@ -124,7 +124,7 @@ export function AskFlowchartPreview({
 
       {isExpanded && (
         <div className="mt-4 space-y-3">
-          <div className="h-[440px] w-full overflow-hidden rounded-xl border border-white/[0.1] bg-[#0E0E0E] sm:h-[520px]">
+          <div className="h-[480px] w-full overflow-hidden rounded-xl border border-white/[0.1] bg-[#0E0E0E] sm:h-[560px]">
             <InteractiveCanvas
               nodes={previewWorkspace.nodes}
               edges={previewWorkspace.edges}

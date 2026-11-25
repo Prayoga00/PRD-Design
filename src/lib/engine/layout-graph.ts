@@ -10,19 +10,19 @@ import type { RawBlueprintNode } from '@/lib/schemas/ai-contracts';
 
 const LR_UX_START_X = 40;
 const LR_UX_Y = 32;
-const LR_UX_GAP_X = 330;
+const LR_UX_GAP_X = 340;
 
 const LR_FLOW_START_X = 40;
 const LR_FLOW_START_Y = 275;
-const LR_FLOW_GAP_X = 360;
-const LR_FLOW_GAP_Y = 230;
+const LR_FLOW_GAP_X = 405;
+const LR_FLOW_GAP_Y = 240;
 const LR_FLOW_COLS_PER_ROW = 4;
 
 const TB_UX_X = 32;
 const TB_SPINE_X = 385;
-const TB_BRANCH_X = 765;
+const TB_BRANCH_X = 830;
 const TB_START_Y = 36;
-const TB_STEP_GAP_Y = 205;
+const TB_STEP_GAP_Y = 210;
 const TB_UX_GAP_Y = 195;
 
 function toCanvasNodeType(zone: RawBlueprintNode['zone']): PrdinNode['type'] {

@@ -1239,7 +1239,7 @@ export function buildWorkspaceFallback(
     id: 'e-flow-decision-recovery',
     source: 'flow-decision',
     target: 'flow-recovery',
-    label: 'Tidak · Perlu Revisi',
+    label: 'Tidak · Revisi',
   });
 
   edges.push({
@@ -1283,7 +1283,7 @@ export function buildWorkspaceFallback(
     id: 'e-flow-decision-flow-outcome',
     source: 'flow-decision',
     target: 'flow-outcome',
-    label: 'Ya · Valid & Lanjut',
+    label: 'Ya · Lanjut',
     animated: true,
   });
 
@@ -1311,7 +1311,7 @@ export function buildWorkspaceFallback(
       id: 'e-ux-retention-flow-outcome',
       source: 'ux-retention',
       target: 'flow-outcome',
-      label: 'Loop Q5',
+      label: 'Retensi Q5',
     }
   );
 
