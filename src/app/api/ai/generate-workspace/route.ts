@@ -91,7 +91,9 @@ Ubah seluruh jawaban 5 pertanyaan menjadi struktur Workspace PRDin yang sinkron 
    - Mode "UI / UX Proses": alur tahapan desain & artefak UX/UI dari riset awal -> seluruh artefak pilihan -> usability testing -> handoff;
    - Mode "Aplikasi": onboarding app -> seluruh modul aplikasi pilihan -> state/validasi -> retention loop;
    - Mode "Website": landing entry -> seluruh halaman/fitur web pilihan -> konversi -> kunjungan ulang.
-3. edges berarah antar node (setiap source dan target wajib ada di blueprintNodes.id).
+3. edges berarah membentuk Flowchart lengkap antar node (setiap source dan target wajib ada di blueprintNodes.id):
+   - Hubungkan seluruh 4 kartu UX Research (ux-persona -> node entry, ux-pain -> node fitur pertama, ux-value -> node flow-decision, ux-retention -> node flow-outcome).
+   - Pada flow-decision ("flow-decision"), buat minimal 2 cabang: "Ya · Valid" ke flow-outcome DAN "Tidak · Perlu Revisi" ke node pemulihan/revisi ("flow-recovery") yang kembali ke alur proses ("Ulangi / Perbaiki").
 4. planSections yang terhubung 1-to-1 (linkedNodeId dan linkedSectionId cocok) dengan penjelasan lengkap, user story, komponen/artefak UI spesifik (UI/UX-ready), acceptance criteria terukur, dan edge cases.
 5. Jika user mengisi businessContext (Target KPI, Peran Aktor & Aturan Bisnis, Non-Goals, atau Batasan Teknis/NFR), wajib tuangkan ke planSections kategori "summary", "specs", dan "non-goals" secara akurat dan terukur.
 

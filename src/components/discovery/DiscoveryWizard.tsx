@@ -1,18 +1,20 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, CheckCircle2, Loader2, RotateCcw, Settings2 } from 'lucide-react';
 import type {
   AdaptiveQuestionConfig,
   AdaptiveQuestionId,
   DiscoveryState,
+  FlowchartDirection,
   PrdBusinessContext,
   PrdPurpose,
 } from '@/lib/types/prdin';
 import { QuestionOneChat } from './QuestionOneChat';
 import { AdaptiveTagStep } from './AdaptiveTagStep';
 import { BusinessContextStep } from './BusinessContextStep';
+import { AskFlowchartPreview } from './AskFlowchartPreview';
 import { StudioShell } from '@/components/layout/StudioShell';
 import { validateDiscoveryReadiness } from '@/lib/validation/prd-validator';
 
@@ -33,7 +35,7 @@ interface DiscoveryWizardProps {
   onChangeBusinessContext: (next: PrdBusinessContext) => void;
   onApplyBusinessPreset: () => void;
   onClearBusinessContext: () => void;
-  onGenerateWorkspace: () => Promise<void>;
+  onGenerateWorkspace: (preferredDirection?: FlowchartDirection) => Promise<void>;
   onOpenApiSettings: () => void;
   onResetDiscovery: () => void;
 }
@@ -60,6 +62,7 @@ export function DiscoveryWizard({
   onResetDiscovery,
 }: DiscoveryWizardProps) {
   const router = useRouter();
+  const [flowchartDirection, setFlowchartDirection] = useState<FlowchartDirection>('TB');
   const qIds: AdaptiveQuestionId[] = ['q2', 'q3', 'q4', 'q5'];
   const q1Done = discovery.q1Summary !== null;
 
@@ -171,6 +174,17 @@ export function DiscoveryWizard({
             onClear={onClearBusinessContext}
           />
 
+          {/* Live Flowchart Canvas Preview immediately when Q1–Q5 are answered */}
+          {allCompleted && (
+            <AskFlowchartPreview
+              discovery={discovery}
+              direction={flowchartDirection}
+              isGeneratingWorkspace={isGeneratingWorkspace}
+              onChangeDirection={setFlowchartDirection}
+              onOpenFullWorkspace={() => void onGenerateWorkspace(flowchartDirection)}
+            />
+          )}
+
           {/* Action Card */}
           <div className="rounded-2xl border border-white/[0.08] bg-[#151518] p-5">
             <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
@@ -198,8 +212,8 @@ export function DiscoveryWizard({
                 </div>
                 <p className="mt-2 text-xs text-[#8C8C8C]">
                   {allCompleted
-                    ? `Semua 5 pertanyaan siap untuk mode ${discoveryValidation.purposeLabel}! Klik tombol di samping untuk menyusun Plan Text, Canvas interaktif, dan Roadmap proyekmu.`
-                    : 'Kirim cerita di Q1 lalu pilih minimal 1 tag di setiap pertanyaan Q2–Q5 (bebas memilih sebanyak apa pun).'}
+                    ? `Flowchart Canvas sudah terbentuk otomatis untuk mode ${discoveryValidation.purposeLabel}! Lanjutkan ke Workspace untuk menyunting Plan Text, node flowchart, dan Roadmap.`
+                    : 'Kirim cerita di Q1 lalu pilih minimal 1 tag di setiap pertanyaan Q2–Q5 untuk otomatis membentuk Flowchart Canvas.'}
                 </p>
                 <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[11px]">
                   <span
@@ -222,7 +236,7 @@ export function DiscoveryWizard({
               <button
                 type="button"
                 disabled={!allCompleted || isGeneratingWorkspace}
-                onClick={() => void onGenerateWorkspace()}
+                onClick={() => void onGenerateWorkspace(flowchartDirection)}
                 className="iris-btn-gradient inline-flex shrink-0 items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-45"
               >
                 {isGeneratingWorkspace ? (

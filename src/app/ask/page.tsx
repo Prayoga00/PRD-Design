@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import type {
   AdaptiveQuestionId,
   AiSettings,
+  FlowchartDirection,
   PrdBusinessContext,
   PrdPurpose,
 } from '@/lib/types/prdin';
@@ -328,7 +329,7 @@ function AskPrdContent() {
     }));
   };
 
-  const handleGenerateWorkspace = async () => {
+  const handleGenerateWorkspace = async (preferredDirection: FlowchartDirection = 'TB') => {
     setGenerateError(null);
     setIsGeneratingWorkspace(true);
 
@@ -336,6 +337,7 @@ function AskPrdContent() {
       const data = await generateWorkspaceClient({
         discovery,
         aiSettings,
+        flowchartDirection: preferredDirection,
       });
 
       updateStudioStore((prev) => ({

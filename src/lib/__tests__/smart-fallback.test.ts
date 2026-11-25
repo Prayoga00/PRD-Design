@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { relayoutWorkspaceNodes } from '@/lib/engine/layout-graph';
 import {
   applyFallbackChatCommand,
   buildWorkspaceFallback,
@@ -85,18 +86,29 @@ describe('smart-fallback engine', () => {
     const flowNodes = workspace.nodes.filter((n) => n.data.zone === 'business-flow');
 
     expect(uxNodes.length).toBe(4);
-    expect(flowNodes.length).toBe(8); // 1 entry + 5 features + 1 decision + 1 outcome
+    expect(flowNodes.length).toBe(9); // 1 entry + 5 features + 1 decision + 1 recovery + 1 outcome
+
+    // Ensure full Flowchart topology: decision Ya & Tidak branches + recovery loopback + 4 connected UX inputs
+    expect(workspace.edges.some((e) => e.source === 'flow-decision' && e.target === 'flow-outcome')).toBe(true);
+    expect(workspace.edges.some((e) => e.source === 'flow-decision' && e.target === 'flow-recovery')).toBe(true);
+    expect(workspace.edges.some((e) => e.source === 'flow-recovery' && e.target === 'flow-feat-1')).toBe(true);
+    for (const uxNode of uxNodes) {
+      expect(workspace.edges.some((e) => e.source === uxNode.id)).toBe(true);
+    }
 
     const entryNode = flowNodes.find((n) => n.id === 'flow-entry');
     expect(entryNode?.data.details.acceptanceCriteria.length).toBeGreaterThanOrEqual(3);
 
-    // Ensure no two nodes occupy identical overlapping positions
-    for (let i = 0; i < workspace.nodes.length; i++) {
-      for (let j = i + 1; j < workspace.nodes.length; j++) {
-        const a = workspace.nodes[i].position;
-        const b = workspace.nodes[j].position;
-        const overlaps = Math.abs(a.x - b.x) < 200 && Math.abs(a.y - b.y) < 100;
-        expect(overlaps).toBe(false);
+    // Ensure no two nodes occupy overlapping positions in TB (default) AND LR orientations
+    for (const dir of ['TB', 'LR'] as const) {
+      const checkedNodes = dir === 'TB' ? workspace.nodes : relayoutWorkspaceNodes(workspace.nodes, workspace.edges, 'LR');
+      for (let i = 0; i < checkedNodes.length; i++) {
+        for (let j = i + 1; j < checkedNodes.length; j++) {
+          const a = checkedNodes[i].position;
+          const b = checkedNodes[j].position;
+          const overlaps = Math.abs(a.x - b.x) < 200 && Math.abs(a.y - b.y) < 100;
+          expect(overlaps).toBe(false);
+        }
       }
     }
 

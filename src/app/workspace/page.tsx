@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import type {
   AiSettings,
+  FlowchartDirection,
   PrdPurpose,
   PrdinEdge,
   PrdinNode,
@@ -28,7 +29,7 @@ import type {
 } from '@/lib/types/prdin';
 import { PRD_PURPOSE_MAP } from '@/lib/constants/prd-purposes';
 import { sendWorkspaceChatClient } from '@/lib/ai/client-ai';
-import { applyWorkspacePatch } from '@/lib/engine/layout-graph';
+import { applyWorkspacePatch, relayoutWorkspaceNodes } from '@/lib/engine/layout-graph';
 import {
   buildWorkspaceFallback,
   buildWorkspaceStateFromOutput,
@@ -680,6 +681,44 @@ function WorkspaceContent() {
                     edges={workspace.edges}
                     selectedNodeId={workspace.selectedNodeId}
                     focusRequestToken={focusRequestToken}
+                    direction={workspace.flowchartDirection ?? 'TB'}
+                    onChangeDirection={(nextDir: FlowchartDirection) => {
+                      setUndoStack((stack) => [...stack.slice(-9), workspace]);
+                      updateStudioStore((prev) =>
+                        prev.workspace
+                          ? {
+                              ...prev,
+                              workspace: {
+                                ...prev.workspace,
+                                flowchartDirection: nextDir,
+                                nodes: relayoutWorkspaceNodes(
+                                  prev.workspace.nodes,
+                                  prev.workspace.edges,
+                                  nextDir
+                                ),
+                              },
+                            }
+                          : prev
+                      );
+                    }}
+                    onRelayout={(dir: FlowchartDirection) => {
+                      setUndoStack((stack) => [...stack.slice(-9), workspace]);
+                      updateStudioStore((prev) =>
+                        prev.workspace
+                          ? {
+                              ...prev,
+                              workspace: {
+                                ...prev.workspace,
+                                nodes: relayoutWorkspaceNodes(
+                                  prev.workspace.nodes,
+                                  prev.workspace.edges,
+                                  dir
+                                ),
+                              },
+                            }
+                          : prev
+                      );
+                    }}
                     onSelectNode={(nodeId) =>
                       updateStudioStore((prev) =>
                         prev.workspace

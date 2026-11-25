@@ -2,6 +2,7 @@ import type {
   AdaptiveQuestionConfig,
   AdaptiveQuestionId,
   DiscoveryState,
+  FlowchartDirection,
   PlanSection,
   PrdBusinessContext,
   PrdPurpose,
@@ -1155,14 +1156,16 @@ export function buildWorkspaceFallback(
     prevNodeId = nodeId;
   });
 
-  // Decision / Verification gate
+  const firstFeatureId = mustFeatures.length > 0 ? 'flow-feat-1' : 'flow-entry';
+
+  // Decision / Verification gate (Diamond)
   blueprintNodes.push({
     id: 'flow-decision',
     title:
       prdPurpose === 'ui-ux-process'
         ? 'Usability Test & Design Review'
         : 'Validasi & Konfirmasi Hasil',
-    subtitle: `Memastikan ${valueHooks} terpenuhi sebelum tahap final.`,
+    subtitle: `Cek apakah ${valueHooks} terpenuhi.`,
     kind: 'flow-decision',
     zone: 'business-flow',
     linkedSectionId: 'sec-flow-decision',
@@ -1181,8 +1184,8 @@ export function buildWorkspaceFallback(
           ? 'Sebagai tim produk, saya ingin memvalidasi alur desain ke user sebelum masuk tahap development.'
           : 'Sebagai pengguna, saya ingin meninjau ringkasan hasil sebelum finalisasi agar tidak ada kesalahan.',
       acceptanceCriteria: [
-        'Seluruh skenario gagal dan revisi mudah diperbaiki tanpa mengulang dari awal.',
-        'Kriteria lolos tercatat jelas sebagai acuan siap eksekusi.',
+        'Seluruh skenario gagal dan revisi dapat diperbaiki dalam <= 2 klik tanpa mengulang dari awal.',
+        'Kriteria lolos tercatat jelas (>= 90% skenario utama sukses) sebagai acuan siap eksekusi.',
       ],
       edgeCases: [
         'Ditemukan kebingungan pengguna saat pengujian atau timeout jaringan saat konfirmasi.',
@@ -1194,10 +1197,59 @@ export function buildWorkspaceFallback(
     id: `e-${prevNodeId}-flow-decision`,
     source: prevNodeId,
     target: 'flow-decision',
-    label: prdPurpose === 'ui-ux-process' ? 'Uji & review' : 'Cek kelengkapan',
+    label: prdPurpose === 'ui-ux-process' ? 'Uji & review' : 'Cek validasi',
   });
 
-  // Outcome & Retention Loop
+  // Decision "Tidak / Revisi" Recovery Branch (loops back to core process)
+  blueprintNodes.push({
+    id: 'flow-recovery',
+    title:
+      prdPurpose === 'ui-ux-process'
+        ? 'Revisi Prototype & Edge State'
+        : 'Perbaikan Input & Coba Lagi',
+    subtitle:
+      prdPurpose === 'ui-ux-process'
+        ? 'Perbaiki temuan testing & lengkapi state error sebelum handoff.'
+        : `Pulihkan kendala ("${q1.painPoint}") dengan panduan perbaikan jelas.`,
+    kind: 'flow-feature',
+    zone: 'business-flow',
+    linkedSectionId: 'sec-flow-recovery',
+    details: {
+      purpose:
+        prdPurpose === 'ui-ux-process'
+          ? 'Menyediakan jalur iterasi cepat jika pengujian prototype menemukan kebingungan pengguna.'
+          : 'Memastikan pengguna tidak buntu saat validasi gagal, data kurang lengkap, atau transaksi tertunda.',
+      actor: prdPurpose === 'ui-ux-process' ? 'UI/UX Designer' : 'Pengguna & Sistem Validasi',
+      uiComponents:
+        prdPurpose === 'ui-ux-process'
+          ? ['Revision Checklist', 'Error State Frame', 'Usability Fix Log']
+          : ['Inline Error Hint', 'Preserve Draft State', 'Tombol Perbaiki & Coba Lagi'],
+      userStory: `Sebagai ${prdPurpose === 'ui-ux-process' ? 'desainer' : 'pengguna'}, jika validasi gagal saya ingin langsung memperbaiki bagian yang bermasalah tanpa mengisi ulang dari awal.`,
+      acceptanceCriteria: [
+        'Data atau input sebelumnya tetap tersimpan (0 data hilang) saat kembali ke tahap sebelumnya.',
+        'Pengguna dapat memperbaiki kesalahan dan mengirim ulang dalam <= 2 klik.',
+      ],
+      edgeCases: [
+        'Koneksi terputus saat mencoba ulang atau pengguna membatalkan revisi.',
+      ],
+    },
+  });
+
+  edges.push({
+    id: 'e-flow-decision-recovery',
+    source: 'flow-decision',
+    target: 'flow-recovery',
+    label: 'Tidak · Perlu Revisi',
+  });
+
+  edges.push({
+    id: 'e-flow-recovery-loopback',
+    source: 'flow-recovery',
+    target: firstFeatureId,
+    label: 'Ulangi / Perbaiki',
+  });
+
+  // Outcome & Retention Loop (End Terminator)
   blueprintNodes.push({
     id: 'flow-outcome',
     title:
@@ -1220,7 +1272,7 @@ export function buildWorkspaceFallback(
           : ['Success Confirmation Screen', 'Saved History Entry', 'Comeback CTA / Reminder'],
       userStory: `Sebagai tim/pengguna, tahap akhir menghasilkan output siap pakai melalui ${retentionHooks}.`,
       acceptanceCriteria: [
-        'Tersedia ringkasan hasil akhir yang siap dibagikan atau ditindaklanjuti.',
+        'Tersedia ringkasan hasil akhir dalam <= 2 detik setelah validasi lolos.',
         `Mekanisme "${retentionHooks}" aktif setelah siklus pertama selesai.`,
       ],
       edgeCases: ['Revisi pasca-handoff atau notifikasi lanjutan gagal terkirim.'],
@@ -1231,17 +1283,37 @@ export function buildWorkspaceFallback(
     id: 'e-flow-decision-flow-outcome',
     source: 'flow-decision',
     target: 'flow-outcome',
-    label: 'Valid / Sukses',
+    label: 'Ya · Valid & Lanjut',
     animated: true,
   });
 
-  edges.push({
-    id: 'e-ux-persona-flow-entry',
-    source: 'ux-persona',
-    target: 'flow-entry',
-    targetHandle: 'top',
-    label: prdPurpose === 'ui-ux-process' ? 'Riset -> Flow' : 'Onboarding',
-  });
+  // Connect all 4 Q1-Q5 UX Research anchors to their corresponding Flowchart nodes
+  edges.push(
+    {
+      id: 'e-ux-persona-flow-entry',
+      source: 'ux-persona',
+      target: 'flow-entry',
+      label: prdPurpose === 'ui-ux-process' ? 'Riset -> Flow' : 'Onboarding Q2',
+    },
+    {
+      id: `e-ux-pain-${firstFeatureId}`,
+      source: 'ux-pain',
+      target: firstFeatureId,
+      label: 'Solusi Masalah',
+    },
+    {
+      id: 'e-ux-value-flow-decision',
+      source: 'ux-value',
+      target: 'flow-decision',
+      label: 'Kriteria Q4',
+    },
+    {
+      id: 'e-ux-retention-flow-outcome',
+      source: 'ux-retention',
+      target: 'flow-outcome',
+      label: 'Loop Q5',
+    }
+  );
 
   const biz = discovery.businessContext;
   const customKpi = biz?.successMetrics?.trim() ?? '';
@@ -1624,14 +1696,16 @@ export function applyFallbackChatCommand(
 export function buildWorkspaceStateFromOutput(
   discovery: DiscoveryState,
   output: GenerateWorkspaceOutput,
-  aiMode: WorkspaceState['aiMode']
+  aiMode: WorkspaceState['aiMode'],
+  flowchartDirection: FlowchartDirection = 'TB'
 ): WorkspaceState {
-  const nodes = layoutBlueprintNodes(output.blueprintNodes, output.edges);
+  const nodes = layoutBlueprintNodes(output.blueprintNodes, output.edges, flowchartDirection);
   const prdPurpose = discovery.prdPurpose ?? 'website';
   return {
     projectId: `proj-${Date.now().toString(36)}`,
     projectTitle: output.projectTitle,
     aiMode,
+    flowchartDirection,
     discovery,
     nodes,
     edges: output.edges,

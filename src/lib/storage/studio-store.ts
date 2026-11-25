@@ -119,6 +119,7 @@ function readInitialClientSnapshot(): StudioStoreSnapshot {
         const prdPurpose = ws.discovery?.prdPurpose ?? discovery.prdPurpose ?? 'website';
         workspace = {
           ...ws,
+          flowchartDirection: ws.flowchartDirection ?? 'TB',
           roadmapTasks: Array.isArray(ws.roadmapTasks)
             ? ws.roadmapTasks
             : buildInitialRoadmapTasks(ws.nodes ?? [], prdPurpose),

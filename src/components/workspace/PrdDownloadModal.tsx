@@ -40,8 +40,13 @@ export function PrdDownloadModal({
 
   const markdown = useMemo(() => compilePrdMarkdown(workspace), [workspace]);
   const mermaid = useMemo(
-    () => buildMermaidFlowchart(workspace.nodes, workspace.edges),
-    [workspace.nodes, workspace.edges]
+    () =>
+      buildMermaidFlowchart(
+        workspace.nodes,
+        workspace.edges,
+        workspace.flowchartDirection ?? 'TB'
+      ),
+    [workspace.nodes, workspace.edges, workspace.flowchartDirection]
   );
   const validation = useMemo(() => validateWorkspacePrd(workspace), [workspace]);
   const filename = useMemo(

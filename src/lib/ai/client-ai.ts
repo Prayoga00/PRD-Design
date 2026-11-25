@@ -3,6 +3,7 @@ import type {
   AdaptiveQuestionId,
   AiSettings,
   DiscoveryState,
+  FlowchartDirection,
   PrdPurpose,
   WorkspacePatch,
   WorkspaceState,
@@ -183,7 +184,9 @@ Keluarkan HANYA valid JSON object.`,
 export async function generateWorkspaceClient(input: {
   discovery: DiscoveryState;
   aiSettings: AiSettings;
+  flowchartDirection?: FlowchartDirection;
 }): Promise<{ workspace: WorkspaceState }> {
+  const direction: FlowchartDirection = input.flowchartDirection ?? 'TB';
   if (!isStaticExport) {
     try {
       const res = await fetch('/api/ai/generate-workspace', {
@@ -196,7 +199,15 @@ export async function generateWorkspaceClient(input: {
       });
       if (res.ok) {
         const data = await res.json();
-        if (data.workspace) return { workspace: data.workspace as WorkspaceState };
+        if (data.workspace) {
+          const ws = data.workspace as WorkspaceState;
+          return {
+            workspace: {
+              ...ws,
+              flowchartDirection: ws.flowchartDirection ?? direction,
+            },
+          };
+        }
       } else if (res.status !== 404 && res.status !== 405) {
         const errData = await res.json().catch(() => ({}));
         throw new Error(errData.error ?? 'Gagal membuat workspace.');
@@ -211,7 +222,7 @@ export async function generateWorkspaceClient(input: {
   const purposeMeta = PRD_PURPOSE_MAP[input.discovery.prdPurpose ?? 'website'];
   const byokRaw = await callBrowserByokLlm(
     input.aiSettings,
-    `Kamu adalah PRDin Product & UX Systems Architect berbahasa Indonesia. Mode: ${purposeMeta.label}. Jika discovery.businessContext terisi (successMetrics, userRolesAndRules, nonGoals, technicalConstraints), integrasikan ke planSections kategori "summary", "specs", dan "non-goals" dengan metrik terukur. Keluarkan HANYA valid JSON GenerateWorkspaceOutput.`,
+    `Kamu adalah PRDin Product & UX Systems Architect berbahasa Indonesia. Mode: ${purposeMeta.label}. Susun blueprintNodes (zone ux-research 4 node + zone business-flow lengkap) dan edges membentuk Flowchart lengkap: hubungkan 4 UX node ke tahapan relevan, serta buat cabang Decision ("Ya · Valid" ke outcome dan "Tidak · Perlu Revisi" ke node flow-recovery yang kembali ke alur proses). Jika discovery.businessContext terisi, integrasikan ke planSections kategori "summary", "specs", dan "non-goals". Keluarkan HANYA valid JSON GenerateWorkspaceOutput.`,
     `Discovery: ${JSON.stringify(input.discovery)}`
   );
   if (byokRaw) {
@@ -221,7 +232,8 @@ export async function generateWorkspaceClient(input: {
         workspace: buildWorkspaceStateFromOutput(
           input.discovery,
           validated.data,
-          'live-llm'
+          'live-llm',
+          direction
         ),
       };
     }
@@ -232,7 +244,8 @@ export async function generateWorkspaceClient(input: {
     workspace: buildWorkspaceStateFromOutput(
       input.discovery,
       fallbackOutput,
-      'smart-fallback'
+      'smart-fallback',
+      direction
     ),
   };
 }

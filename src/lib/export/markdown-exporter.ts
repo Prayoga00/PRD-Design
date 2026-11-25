@@ -1,4 +1,4 @@
-import type { PrdinEdge, PrdinNode, WorkspaceState } from '@/lib/types/prdin';
+import type { FlowchartDirection, PrdinEdge, PrdinNode, WorkspaceState } from '@/lib/types/prdin';
 import { PRD_PURPOSE_MAP } from '@/lib/constants/prd-purposes';
 import { ROADMAP_COLUMNS } from '@/lib/engine/roadmap-defaults';
 import { validateWorkspacePrd } from '@/lib/validation/prd-validator';
@@ -29,14 +29,18 @@ export function escapeMermaidLabel(label: string): string {
     .trim();
 }
 
-export function buildMermaidFlowchart(nodes: PrdinNode[], edges: PrdinEdge[]): string {
+export function buildMermaidFlowchart(
+  nodes: PrdinNode[],
+  edges: PrdinEdge[],
+  direction: FlowchartDirection = 'LR'
+): string {
   const uxNodes = nodes.filter((n) => n.data.zone === 'ux-research');
   const flowNodes = nodes.filter((n) => n.data.zone === 'business-flow');
 
-  const lines: string[] = ['flowchart LR'];
+  const lines: string[] = [`flowchart ${direction}`];
 
   if (uxNodes.length > 0) {
-    lines.push('  subgraph UX_Research["UX Research & Insight"]');
+    lines.push('  subgraph UX_Research["UX Research & Konteks Q1-Q5"]');
     for (const node of uxNodes) {
       const mId = sanitizeMermaidId(node.id);
       const label = escapeMermaidLabel(`${node.data.title}: ${node.data.subtitle}`);
@@ -46,12 +50,14 @@ export function buildMermaidFlowchart(nodes: PrdinNode[], edges: PrdinEdge[]): s
   }
 
   if (flowNodes.length > 0) {
-    lines.push('  subgraph Business_Flow["Struktur Flow Kerja Bisnis"]');
+    lines.push('  subgraph Business_Flow["Flowchart Sistem & Alur Kerja"]');
     for (const node of flowNodes) {
       const mId = sanitizeMermaidId(node.id);
       const label = escapeMermaidLabel(`${node.data.title} - ${node.data.subtitle}`);
       if (node.data.kind === 'flow-decision') {
         lines.push(`    ${mId}{"${label}"}`);
+      } else if (node.data.kind === 'flow-start' || node.data.kind === 'flow-outcome') {
+        lines.push(`    ${mId}(["${label}"])`);
       } else {
         lines.push(`    ${mId}["${label}"]`);
       }
@@ -104,7 +110,7 @@ export function compilePrdMarkdown(workspace: WorkspaceState): string {
   const nonGoalSections = planSections.filter((s) => s.category === 'non-goals');
 
   const flowNodes = nodes.filter((n) => n.data.zone === 'business-flow');
-  const mermaidBlock = buildMermaidFlowchart(nodes, edges);
+  const mermaidBlock = buildMermaidFlowchart(nodes, edges, workspace.flowchartDirection ?? 'TB');
   const biz = discovery.businessContext;
   const customKpis = biz?.successMetrics
     ?.split(/[;\n]+/)

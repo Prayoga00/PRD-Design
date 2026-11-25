@@ -84,6 +84,8 @@ export type CanvasNodeKind =
 
 export type CanvasZone = 'ux-research' | 'business-flow';
 
+export type FlowchartDirection = 'TB' | 'LR';
+
 export interface NodeDetails {
   purpose: string;
   actor: string;
@@ -162,6 +164,7 @@ export interface WorkspaceState {
   projectId: string;
   projectTitle: string;
   aiMode: AiExecutionMode;
+  flowchartDirection?: FlowchartDirection;
   discovery: DiscoveryState;
   nodes: PrdinNode[];
   edges: PrdinEdge[];
